@@ -28,6 +28,10 @@ class AppState {
     this.isConnected = false;
     this.lastEvent = null;
     this.statusText = 'IDLE';
+
+    // Multi-session tracking
+    this.availableSessions = [];
+    this.selectedSessionId = null;
   }
 
   // Update from computed usage data (from main process scanning session logs)

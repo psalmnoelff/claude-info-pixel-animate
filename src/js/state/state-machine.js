@@ -20,6 +20,17 @@ class StateMachine {
     this.stateTimer = 0;
     this.sleepParticleTimer = 0;
     this.onStateChange = null; // callback
+
+    // Worker exit sequence (DONE -> workers leave one by one)
+    this.workersExiting = false;
+    this.workerExitQueue = [];
+    this.workerExitTimer = 0;
+
+    // Lights-out sequence (extended IDLE -> leader exits, lights dim)
+    this.lightsOn = true;
+    this.lightsDimProgress = 0; // 0 = fully lit, 0.75 = max dimness
+    this.lightsOutSequenceActive = false;
+    this.leaderExiting = false;
   }
 
   getState() {
@@ -30,6 +41,17 @@ class StateMachine {
     if (this.state === newState) return;
 
     const oldState = this.state;
+
+    // Cancel worker exit sequence if active
+    if (this.workersExiting) {
+      this._cancelWorkerExit();
+    }
+
+    // Cancel lights-out if interrupted
+    if (this.lightsOutSequenceActive || !this.lightsOn) {
+      this._cancelLightsOut();
+    }
+
     this.state = newState;
     this.stateTimer = 0;
     this.appState.statusText = newState;
@@ -54,20 +76,29 @@ class StateMachine {
   _onEnter(state) {
     const leader = this.charMgr.leader;
 
+    // If lights were off, re-enter leader through door first
+    if (!this.lightsOn && state !== STATES.IDLE) {
+      this._reenterLeader(state);
+      return;
+    }
+
     switch (state) {
       case STATES.IDLE:
         this.whiteboard.clearBoard();
         this.charMgr.clearWorkers();
+        leader.stopMovement();
         leader.goToOwnDesk(() => leader.startSleeping());
         this.door.close();
         this.sleepParticleTimer = 0;
         break;
 
       case STATES.THINKING:
+        leader.stopMovement();
         leader.goToWhiteboard(this.whiteboard);
         break;
 
       case STATES.DELEGATING: {
+        leader.stopMovement();
         // Spawn a worker if we don't have any
         if (this.charMgr.getWorkerCount() === 0) {
           this.door.open();
@@ -88,6 +119,7 @@ class StateMachine {
 
       case STATES.CODING:
         // All workers go to their desks and type
+        leader.stopMovement();
         leader.goToDesk(() => leader.startTyping());
         for (const w of this.charMgr.workers) {
           if (!w.isOverflow) {
@@ -99,6 +131,7 @@ class StateMachine {
 
       case STATES.DONE:
         // Everyone sleeps
+        leader.stopMovement();
         leader.goToOwnDesk(() => leader.startSleeping());
         for (const w of this.charMgr.workers) {
           if (w.isOverflow) continue;
@@ -135,8 +168,222 @@ class StateMachine {
     }
   }
 
+  // Re-enter leader through door when lights were off and new activity starts
+  _reenterLeader(targetState) {
+    this.lightsOn = true;
+    this.lightsOutSequenceActive = false;
+    this.leaderExiting = false;
+
+    const leader = this.charMgr.leader;
+    leader.visible = true;
+    leader.x = CONFIG.DOOR_POS.x;
+    leader.y = CONFIG.DOOR_POS.y;
+
+    this.door.open();
+
+    // Walk to the target position for the new state, then run normal entry
+    const target = this._getLeaderTargetForState(targetState);
+    leader.moveTo(target, CONFIG.MOVE_SPEED, () => {
+      this.door.close();
+      this._runLeaderStateAction(targetState);
+    });
+
+    // Also handle workers/whiteboard for the new state (non-leader parts)
+    this._enterNonLeaderActions(targetState);
+  }
+
+  // Get where the leader should go for a given state
+  _getLeaderTargetForState(state) {
+    switch (state) {
+      case STATES.THINKING:
+        return CONFIG.WHITEBOARD_POS;
+      case STATES.DELEGATING:
+        return CONFIG.WHITEBOARD_POS;
+      case STATES.CODING:
+        return this.charMgr.leader.getLeaderSitPosition();
+      case STATES.DONE:
+        return this.charMgr.leader.getLeaderSitPosition();
+      case STATES.IDLE:
+        return this.charMgr.leader.getLeaderSitPosition();
+      default:
+        return this.charMgr.leader.getLeaderSitPosition();
+    }
+  }
+
+  // Run leader-specific action after reaching position
+  _runLeaderStateAction(state) {
+    const leader = this.charMgr.leader;
+    switch (state) {
+      case STATES.THINKING:
+        leader.state = 'drawing';
+        leader.setAnimation('leader_draw');
+        leader.isDrawing = true;
+        leader.drawTimer = 0;
+        break;
+      case STATES.DELEGATING:
+        leader.state = 'drawing';
+        leader.setAnimation('leader_draw');
+        leader.isDrawing = true;
+        leader.drawTimer = 0;
+        break;
+      case STATES.CODING:
+        leader.startTyping();
+        break;
+      case STATES.DONE:
+        leader.startSleeping();
+        break;
+      case STATES.IDLE:
+        leader.startSleeping();
+        break;
+    }
+  }
+
+  // Handle non-leader actions when re-entering from lights-out
+  _enterNonLeaderActions(state) {
+    switch (state) {
+      case STATES.DELEGATING:
+        if (this.charMgr.getWorkerCount() === 0) {
+          const worker = this.charMgr.spawnWorker();
+          worker.visible = true;
+          worker.goToWhiteboard();
+          this.appState.agentCount = this.charMgr.getWorkerCount();
+        }
+        break;
+      case STATES.CODING:
+        for (const w of this.charMgr.workers) {
+          if (!w.isOverflow) {
+            w.goToDeskAndType();
+          }
+        }
+        break;
+      case STATES.MULTI_AGENT: {
+        const newWorker = this.charMgr.spawnWorker();
+        newWorker.visible = true;
+        this.appState.agentCount = this.charMgr.getWorkerCount();
+        if (newWorker.isOverflow) {
+          newWorker.startPhoneWalk();
+        } else {
+          newWorker.enterAndSit();
+        }
+        break;
+      }
+    }
+  }
+
+  // --- Worker Exit Sequence (DONE timeout) ---
+
+  startWorkerExitSequence() {
+    const workers = this.charMgr.workers.filter(w => w.visible);
+    if (workers.length === 0) {
+      // No workers to exit, go straight to IDLE
+      this.transition(STATES.IDLE);
+      return;
+    }
+
+    this.workersExiting = true;
+    this.workerExitQueue = [...workers];
+    this.workerExitTimer = 0;
+    this.door.open();
+  }
+
+  updateWorkerExitSequence(dt) {
+    if (!this.workersExiting) return;
+
+    this.workerExitTimer += dt;
+
+    if (this.workerExitTimer >= CONFIG.WORKER_EXIT_STAGGER && this.workerExitQueue.length > 0) {
+      this.workerExitTimer = 0;
+      const worker = this.workerExitQueue.shift();
+      worker.leave(() => {
+        this.charMgr.removeWorker(worker);
+        this.appState.agentCount = this.charMgr.getWorkerCount();
+
+        // All workers exited?
+        if (this.charMgr.getWorkerCount() === 0 && this.workerExitQueue.length === 0) {
+          this.workersExiting = false;
+          this.door.close();
+          this.transition(STATES.IDLE);
+        }
+      });
+    }
+
+    // Safety: if queue is empty but workers still walking out, wait
+    if (this.workerExitQueue.length === 0 && this.charMgr.getWorkerCount() === 0) {
+      this.workersExiting = false;
+      this.door.close();
+      this.transition(STATES.IDLE);
+    }
+  }
+
+  _cancelWorkerExit() {
+    this.workersExiting = false;
+    this.workerExitQueue = [];
+    this.workerExitTimer = 0;
+  }
+
+  // --- Lights-Out Sequence (IDLE timeout) ---
+
+  startLightsOutSequence() {
+    if (this.lightsOutSequenceActive) return;
+    this.lightsOutSequenceActive = true;
+    this.leaderExiting = true;
+
+    const leader = this.charMgr.leader;
+    leader.stopMovement();
+    this.door.open();
+
+    leader.moveTo(CONFIG.DOOR_POS, CONFIG.MOVE_SPEED, () => {
+      leader.visible = false;
+      this.lightsOn = false;
+      this.leaderExiting = false;
+      this.door.close();
+    });
+  }
+
+  _cancelLightsOut() {
+    this.lightsOutSequenceActive = false;
+    this.leaderExiting = false;
+
+    const leader = this.charMgr.leader;
+    if (!leader.visible) {
+      // Leader was already hidden - bring back
+      leader.visible = true;
+      leader.x = CONFIG.DOOR_POS.x;
+      leader.y = CONFIG.DOOR_POS.y;
+    }
+    this.lightsOn = true;
+  }
+
   update(dt) {
     this.stateTimer += dt;
+
+    // Lerp lights dim progress toward target
+    const dimTarget = this.lightsOn ? 0 : 0.75;
+    if (Math.abs(this.lightsDimProgress - dimTarget) > 0.001) {
+      const lerpSpeed = 0.5; // per second
+      if (this.lightsDimProgress < dimTarget) {
+        this.lightsDimProgress = Math.min(this.lightsDimProgress + lerpSpeed * dt, dimTarget);
+      } else {
+        this.lightsDimProgress = Math.max(this.lightsDimProgress - lerpSpeed * dt, dimTarget);
+      }
+    } else {
+      this.lightsDimProgress = dimTarget;
+    }
+
+    // Worker exit sequence update
+    if (this.workersExiting) {
+      this.updateWorkerExitSequence(dt);
+    }
+
+    // DONE timeout: after DONE_TIMEOUT seconds, start worker exit
+    if (this.state === STATES.DONE && !this.workersExiting && this.stateTimer > CONFIG.DONE_TIMEOUT) {
+      this.startWorkerExitSequence();
+    }
+
+    // IDLE timeout: after IDLE_TIMEOUT seconds, start lights-out
+    if (this.state === STATES.IDLE && this.lightsOn && !this.lightsOutSequenceActive && this.stateTimer > CONFIG.IDLE_TIMEOUT) {
+      this.startLightsOutSequence();
+    }
 
     // Sleep ZZZ particles (for both IDLE and DONE states)
     if (this.state === STATES.DONE || this.state === STATES.IDLE) {
@@ -145,7 +392,7 @@ class StateMachine {
         this.sleepParticleTimer = 0;
         // Spawn ZZZ above leader when sleeping
         const leader = this.charMgr.leader;
-        if (leader.state === 'sleeping') {
+        if (leader.state === 'sleeping' && leader.visible) {
           this.particles.spawnZZZ(leader.x + 4, leader.y);
         }
         // And above sleeping workers (DONE state)

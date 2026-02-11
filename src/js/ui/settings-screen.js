@@ -1,8 +1,9 @@
 // Settings overlay for launch configuration
 class SettingsScreen {
-  constructor(overlay, connector) {
+  constructor(overlay, connector, appState) {
     this.overlay = overlay;
     this.connector = connector;
+    this.appState = appState;
     this.visible = false;
     this._build();
   }
@@ -31,6 +32,12 @@ class SettingsScreen {
               padding: 8px 16px; font-family: monospace; font-size: 14px; cursor: pointer;
             ">LISTEN</button>
             <span id="si-listen-status" style="color: #83769c; font-size: 11px;"></span>
+          </div>
+        </div>
+
+        <div id="si-sessions-section" style="margin-bottom: 15px; padding: 10px; background: #000; border: 1px solid #5f574f; display: none;">
+          <p style="margin: 0 0 8px; color: #ffa300; font-size: 13px;">ACTIVE SESSIONS</p>
+          <div id="si-sessions-list" style="max-height: 120px; overflow-y: auto;">
           </div>
         </div>
 
@@ -75,13 +82,15 @@ class SettingsScreen {
         </div>
 
         <p style="margin-top: 10px; color: #83769c; font-size: 11px;">
-          Keys 0-5 = test states | ESC = settings | D = demo cycle | T = pin on top
+          Keys 0-5 = test states | ESC = settings | D = demo | T = pin | S = cycle session
         </p>
       </div>
     `;
 
     this.listenButton = this.overlay.querySelector('#si-listen');
     this.listenStatus = this.overlay.querySelector('#si-listen-status');
+    this.sessionsSection = this.overlay.querySelector('#si-sessions-section');
+    this.sessionsList = this.overlay.querySelector('#si-sessions-list');
 
     this.listenButton.addEventListener('click', async () => {
       if (this.connector.watching) {
@@ -89,6 +98,7 @@ class SettingsScreen {
         this.listenButton.textContent = 'LISTEN';
         this.listenButton.style.background = '#29adff';
         this.listenStatus.textContent = '';
+        this.sessionsSection.style.display = 'none';
       } else {
         await this.connector.watch();
         this.listenButton.textContent = 'STOP LISTENING';
@@ -135,6 +145,49 @@ class SettingsScreen {
     });
   }
 
+  updateSessionList(sessions) {
+    if (!sessions || sessions.length === 0) {
+      this.sessionsSection.style.display = 'none';
+      return;
+    }
+
+    this.sessionsSection.style.display = 'block';
+    const selectedId = this.appState?.selectedSessionId;
+
+    let html = '';
+    for (const s of sessions) {
+      const isSelected = s.id === selectedId;
+      const age = Math.floor((Date.now() - s.mtime) / 60000);
+      const ageText = age < 1 ? 'now' : age + 'm ago';
+      const proj = (s.project || 'unknown').substring(0, 30);
+      html += `<div
+        data-session-id="${s.id}"
+        style="
+          padding: 4px 8px; margin: 2px 0; cursor: pointer;
+          background: ${isSelected ? '#29adff' : '#1d2b53'};
+          color: ${isSelected ? '#fff1e8' : '#c2c3c7'};
+          font-size: 11px; border: 1px solid ${isSelected ? '#29adff' : '#5f574f'};
+        "
+        class="session-item"
+      >${proj} <span style="color: #83769c; float: right;">${ageText}</span></div>`;
+    }
+    this.sessionsList.innerHTML = html;
+
+    // Add click handlers
+    for (const el of this.sessionsList.querySelectorAll('.session-item')) {
+      el.addEventListener('click', () => {
+        const id = el.dataset.sessionId;
+        if (this.appState) {
+          this.appState.selectedSessionId = id;
+        }
+        if (window.claude && window.claude.selectSession) {
+          window.claude.selectSession(id);
+        }
+        this.updateSessionList(sessions);
+      });
+    }
+  }
+
   async _refreshAotButton() {
     const isOnTop = await window.appWindow.isAlwaysOnTop();
     this.aotButton.textContent = `ALWAYS ON TOP: ${isOnTop ? 'ON' : 'OFF'}`;
@@ -144,6 +197,10 @@ class SettingsScreen {
   show() {
     this.visible = true;
     this._refreshAotButton();
+    // Refresh session list on show
+    if (this.appState?.availableSessions) {
+      this.updateSessionList(this.appState.availableSessions);
+    }
     this.overlay.classList.remove('hidden');
   }
 

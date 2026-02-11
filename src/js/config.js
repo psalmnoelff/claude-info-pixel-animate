@@ -89,4 +89,9 @@ const CONFIG = {
   FPS: 60,
   WALK_SPEED: 1.0,  // pixels per frame
   MOVE_SPEED: 40,   // pixels per second for tweens
+
+  // Timeouts (seconds)
+  DONE_TIMEOUT: 180,        // 3 minutes in DONE before workers exit
+  IDLE_TIMEOUT: 300,        // 5 minutes in IDLE before lights-out
+  WORKER_EXIT_STAGGER: 1.5, // seconds between worker departures
 };

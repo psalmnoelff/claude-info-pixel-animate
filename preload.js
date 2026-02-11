@@ -12,6 +12,7 @@ contextBridge.exposeInMainWorld('claude', {
   status: () => ipcRenderer.invoke('claude:status'),
   watch: () => ipcRenderer.invoke('claude:watch'),
   unwatch: () => ipcRenderer.invoke('claude:unwatch'),
+  selectSession: (sessionId) => ipcRenderer.invoke('claude:select-session', sessionId),
   onEvent: (callback) => {
     const handler = (_event, data) => callback(data);
     ipcRenderer.on('claude:event', handler);
@@ -41,5 +42,10 @@ contextBridge.exposeInMainWorld('claude', {
     const handler = (_event, data) => callback(data);
     ipcRenderer.on('claude:usage-update', handler);
     return () => ipcRenderer.removeListener('claude:usage-update', handler);
+  },
+  onSessionsList: (callback) => {
+    const handler = (_event, data) => callback(data);
+    ipcRenderer.on('claude:sessions-list', handler);
+    return () => ipcRenderer.removeListener('claude:sessions-list', handler);
   }
 });

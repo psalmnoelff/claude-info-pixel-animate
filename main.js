@@ -8,6 +8,8 @@ let mainWindow;
 let claudeProcess = null;
 let sessionWatcher = null; // file watcher for session logs
 let tailPosition = 0;     // current read offset for tailing
+let selectedSessionId = null; // which session is currently selected for usage tracking
+let lastCWValue = null;   // cached CW value to prevent blinking
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -86,27 +88,34 @@ function getClaudeProjectsDir() {
   return path.join(home, '.claude', 'projects');
 }
 
-// Find the most recently modified .jsonl file across all project dirs
-function findActiveSession() {
+// Find ALL active sessions (modified in last 30 minutes)
+function findActiveSessions() {
   const projectsDir = getClaudeProjectsDir();
-  if (!fs.existsSync(projectsDir)) return null;
+  if (!fs.existsSync(projectsDir)) return [];
 
-  let newest = null;
-  let newestTime = 0;
+  const now = Date.now();
+  const thirtyMinAgo = now - 30 * 60 * 1000;
+  const sessions = [];
 
-  function scanDir(dir) {
+  function scanDir(dir, projectName) {
     try {
       const entries = fs.readdirSync(dir, { withFileTypes: true });
       for (const entry of entries) {
         const fullPath = path.join(dir, entry.name);
         if (entry.isDirectory() && entry.name !== 'session-memory') {
-          scanDir(fullPath);
+          // Use directory name as project context
+          const proj = projectName || entry.name;
+          scanDir(fullPath, proj);
         } else if (entry.isFile() && entry.name.endsWith('.jsonl') && !entry.name.includes('subagent')) {
           try {
             const stat = fs.statSync(fullPath);
-            if (stat.mtimeMs > newestTime) {
-              newestTime = stat.mtimeMs;
-              newest = fullPath;
+            if (stat.mtimeMs > thirtyMinAgo) {
+              sessions.push({
+                id: entry.name.replace('.jsonl', ''),
+                path: fullPath,
+                mtime: stat.mtimeMs,
+                project: projectName || path.basename(dir),
+              });
             }
           } catch (e) { /* skip */ }
         }
@@ -114,8 +123,25 @@ function findActiveSession() {
     } catch (e) { /* skip */ }
   }
 
-  scanDir(projectsDir);
-  return newest;
+  scanDir(projectsDir, null);
+
+  // Sort newest first
+  sessions.sort((a, b) => b.mtime - a.mtime);
+  return sessions;
+}
+
+// Find the most recently modified session (backwards compat)
+function findActiveSession() {
+  const sessions = findActiveSessions();
+  if (sessions.length === 0) return null;
+
+  // If a session is selected, prefer it
+  if (selectedSessionId) {
+    const selected = sessions.find(s => s.id === selectedSessionId);
+    if (selected) return selected.path;
+  }
+
+  return sessions[0].path;
 }
 
 // Read new lines from a JSONL file starting at offset
@@ -230,8 +256,17 @@ function computeUsageFromFile(filePath) {
   return usage;
 }
 
-// Compute accumulated usage across recent sessions
-function computeAllUsage() {
+// Compute usage for a specific session file only
+function computeUsageForSession(filePath) {
+  const usage = computeUsageFromFile(filePath);
+  return {
+    sessionTokens: usage.outputTokens,
+    currentSessionContext: usage.inputTokens + usage.outputTokens,
+  };
+}
+
+// Compute accumulated usage across recent sessions (weekly totals only)
+function computeWeeklyUsage() {
   const projectsDir = getClaudeProjectsDir();
   if (!fs.existsSync(projectsDir)) return null;
 
@@ -242,7 +277,6 @@ function computeAllUsage() {
   let sessionTokens = 0;  // current session window (5h)
   let weeklyTokens = 0;   // all models this week
   let sonnetWeekly = 0;   // sonnet this week
-  let currentSessionContext = 0; // input tokens in active session
 
   // Find all JSONL session files
   const sessionFiles = [];
@@ -266,9 +300,6 @@ function computeAllUsage() {
   }
   scanDir(projectsDir);
 
-  // Sort by modification time (newest last)
-  sessionFiles.sort((a, b) => a.mtime - b.mtime);
-
   for (const sf of sessionFiles) {
     const usage = computeUsageFromFile(sf.path);
 
@@ -280,18 +311,12 @@ function computeAllUsage() {
     if (sf.mtime > fiveHoursAgo) {
       sessionTokens += usage.outputTokens;
     }
-
-    // Current (most recent) session context
-    if (sf === sessionFiles[sessionFiles.length - 1]) {
-      currentSessionContext = usage.inputTokens + usage.outputTokens;
-    }
   }
 
   return {
     sessionTokens,
     weeklyTokens,
     sonnetWeekly,
-    currentSessionContext,
   };
 }
 
@@ -301,6 +326,7 @@ function stopSessionWatcher() {
     sessionWatcher = null;
   }
   tailPosition = 0;
+  lastCWValue = null;
 }
 
 function startSessionWatcher() {
@@ -308,14 +334,26 @@ function startSessionWatcher() {
 
   let currentFile = null;
   let scanCount = 0;
+  let lastFileSize = 0; // Track file size to detect actual changes for CW
 
   // Send initial status
   mainWindow?.webContents.send('claude:watch-status', { watching: true, file: null });
 
   // Compute and send initial usage
-  const initialUsage = computeAllUsage();
-  if (initialUsage) {
+  const weeklyUsage = computeWeeklyUsage();
+  if (weeklyUsage) {
+    const initialUsage = { ...weeklyUsage, currentSessionContext: 0 };
     mainWindow?.webContents.send('claude:usage-update', initialUsage);
+  }
+
+  // Send initial session list
+  const initialSessions = findActiveSessions();
+  if (initialSessions.length > 0) {
+    mainWindow?.webContents.send('claude:sessions-list', initialSessions.map(s => ({
+      id: s.id,
+      project: s.project,
+      mtime: s.mtime,
+    })));
   }
 
   sessionWatcher = setInterval(() => {
@@ -328,13 +366,27 @@ function startSessionWatcher() {
         try {
           const stat = fs.statSync(currentFile);
           tailPosition = stat.size;
+          lastFileSize = stat.size;
         } catch (e) {
           tailPosition = 0;
+          lastFileSize = 0;
         }
         mainWindow?.webContents.send('claude:watch-status', {
           watching: true,
           file: path.basename(currentFile)
         });
+      }
+
+      // Update session list every 10 polls
+      if (scanCount % 10 === 0) {
+        const sessions = findActiveSessions();
+        if (sessions.length > 0) {
+          mainWindow?.webContents.send('claude:sessions-list', sessions.map(s => ({
+            id: s.id,
+            project: s.project,
+            mtime: s.mtime,
+          })));
+        }
       }
     }
     scanCount++;
@@ -357,9 +409,27 @@ function startSessionWatcher() {
 
     // Recompute usage every 30 polls (~15 seconds) or when new events arrive
     if (hasNewEvents || scanCount % 30 === 0) {
-      const usage = computeAllUsage();
-      if (usage) {
-        mainWindow?.webContents.send('claude:usage-update', usage);
+      const weeklyUsage = computeWeeklyUsage();
+      if (weeklyUsage) {
+        // Compute CW from only the currently-tailed file
+        let currentSessionContext = lastCWValue || 0;
+        if (currentFile) {
+          try {
+            const stat = fs.statSync(currentFile);
+            // Only recompute CW if the file actually changed
+            if (stat.size !== lastFileSize || hasNewEvents) {
+              const sessionUsage = computeUsageForSession(currentFile);
+              currentSessionContext = sessionUsage.currentSessionContext;
+              lastCWValue = currentSessionContext;
+              lastFileSize = stat.size;
+            }
+          } catch (e) { /* keep cached value */ }
+        }
+
+        mainWindow?.webContents.send('claude:usage-update', {
+          ...weeklyUsage,
+          currentSessionContext,
+        });
       }
     }
   }, 500); // Poll every 500ms
@@ -388,6 +458,13 @@ ipcMain.handle('claude:stop', () => {
 
 ipcMain.handle('claude:status', () => {
   return { running: claudeProcess !== null };
+});
+
+ipcMain.handle('claude:select-session', (_event, sessionId) => {
+  selectedSessionId = sessionId;
+  // Reset CW cache so it recomputes for new session
+  lastCWValue = null;
+  return { ok: true };
 });
 
 ipcMain.handle('window:toggle-always-on-top', () => {

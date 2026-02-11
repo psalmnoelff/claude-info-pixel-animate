@@ -20,8 +20,17 @@ class Character {
     this.animator.play(animName);
   }
 
+  // Cancel any in-progress movement
+  stopMovement() {
+    this.tween = null;
+    this.moveCallback = null;
+  }
+
   // Move to a target position with tweening
   moveTo(target, speed, callback) {
+    // Cancel any existing movement first
+    this.stopMovement();
+
     // Build waypoint path (L-shaped: first X, then Y)
     const waypoints = [];
     waypoints.push({ x: this.x, y: this.y });
