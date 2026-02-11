@@ -20,6 +20,10 @@ const ANIMATIONS = {
     frames: ['leader_sit'],
     fps: 1
   },
+  leader_type: {
+    frames: ['leader_type_0', 'leader_type_1'],
+    fps: 4
+  },
   leader_draw: {
     frames: ['leader_draw_0', 'leader_draw_1', 'leader_draw_2'],
     fps: 4

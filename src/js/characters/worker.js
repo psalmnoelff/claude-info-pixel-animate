@@ -10,6 +10,8 @@ class Worker extends Character {
     this.tintColor = tintColor;
     this.isOverflow = deskIndex < 0; // No desk assigned = overflow
     this.phoneDir = 1; // Direction for phone walking
+    this.lookTimer = 0; // Timer for looking left/right while typing
+    this.lookInterval = 2 + Math.random() * 4; // Randomized per worker
     this.setAnimation('worker_idle');
   }
 
@@ -78,6 +80,16 @@ class Worker extends Character {
 
   update(dt) {
     super.update(dt);
+
+    // Look left/right while typing at desk
+    if (this.state === 'typing') {
+      this.lookTimer += dt;
+      if (this.lookTimer >= this.lookInterval) {
+        this.lookTimer = 0;
+        this.lookInterval = 2 + Math.random() * 4;
+        this.facingRight = !this.facingRight;
+      }
+    }
 
     // Phone walking behavior (pacing back and forth)
     if (this.state === 'phone') {

@@ -28,6 +28,48 @@ class Office {
 
     // Wall decoration - subtle horizontal line
     r.fillRect(0, T - 1, CONFIG.WIDTH, 1, CONFIG.COL.INDIGO);
+
+    // Windows on the wall (between whiteboard and door, and left of whiteboard)
+    this._drawWindow(r, 1 * T + 4, 4, 20, 18);   // Left wall window
+    this._drawWindow(r, 13 * T + 2, 4, 20, 18);   // Between whiteboard and door
+
+    // Potted plants on the baseboard (wall level, not walkable)
+    this._drawPlant(r, 4 * T + 4, 2 * T - 10, CONFIG.COL.RED);     // Left of whiteboard
+    this._drawPlant(r, 12 * T + 4, 2 * T - 10, CONFIG.COL.YELLOW);  // Right of whiteboard
+    this._drawPlant(r, 16 * T + 4, 2 * T - 10, CONFIG.COL.PINK);    // Left of door
+
+    // Corner plants (bottom corners, below overflow area)
+    this._drawPlant(r, 2, 10 * T - 10, CONFIG.COL.GREEN);            // Lower-left
+    this._drawPlant(r, 19 * T - 8, 10 * T - 10, CONFIG.COL.BLUE);   // Lower-right
+  }
+
+  _drawWindow(r, x, y, w, h) {
+    // Outer frame (light grey)
+    r.fillRect(x, y, w, h, CONFIG.COL.LIGHT_GREY);
+    // Inner pane (light blue "sky")
+    r.fillRect(x + 2, y + 2, w - 4, h - 4, CONFIG.COL.BLUE);
+    // Cross divider
+    r.fillRect(x + Math.floor(w / 2) - 0, y + 2, 1, h - 4, CONFIG.COL.LIGHT_GREY);
+    r.fillRect(x + 2, y + Math.floor(h / 2) - 0, w - 4, 1, CONFIG.COL.LIGHT_GREY);
+    // Highlight on glass (top-left pane)
+    r.fillRect(x + 4, y + 4, 2, 1, CONFIG.COL.WHITE);
+  }
+
+  _drawPlant(r, x, y, flowerColor) {
+    // Pot (brown trapezoid)
+    r.fillRect(x + 1, y + 6, 6, 4, CONFIG.COL.BROWN);
+    r.fillRect(x, y + 5, 8, 1, CONFIG.COL.BROWN);        // Rim
+    // Soil
+    r.fillRect(x + 2, y + 6, 4, 1, CONFIG.COL.DARK_GREEN);
+    // Stem
+    r.fillRect(x + 3, y + 2, 1, 4, CONFIG.COL.DARK_GREEN);
+    // Leaves
+    r.fillRect(x + 2, y + 3, 1, 1, CONFIG.COL.GREEN);
+    r.fillRect(x + 4, y + 2, 1, 1, CONFIG.COL.GREEN);
+    r.fillRect(x + 1, y + 1, 1, 1, CONFIG.COL.GREEN);
+    r.fillRect(x + 5, y + 1, 1, 1, CONFIG.COL.GREEN);
+    // Flower
+    r.fillRect(x + 2, y, 3, 2, flowerColor);
   }
 
   // Draw dark overlay for lights-out effect (call after all scene drawing, before HUD)

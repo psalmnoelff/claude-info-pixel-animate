@@ -35,6 +35,12 @@ class Character {
     const dx = Math.abs(target.x - this.x);
     const dy = Math.abs(target.y - this.y);
 
+    // Already at destination - fire callback immediately
+    if (dx < 1 && dy < 1) {
+      if (callback) callback();
+      return;
+    }
+
     // Safe horizontal corridor above all desk furniture
     const SAFE_Y = 2 * T; // y=32
     // Desk furniture zone (top-row desks start at y=48, bottom-row ends ~y=120)
@@ -156,7 +162,7 @@ class Character {
   // Start typing
   startTyping() {
     this.state = 'typing';
-    this.setAnimation(this.type === 'leader' ? 'leader_sit' : 'worker_type');
+    this.setAnimation(this.type === 'leader' ? 'leader_type' : 'worker_type');
   }
 
   // Start sleeping
