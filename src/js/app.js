@@ -161,6 +161,15 @@
       }
     }
 
+    // R = reset to initial state and re-listen
+    if (e.key === 'r' || e.key === 'R') {
+      demoMode = false;
+      stateMachine.reset();
+      appState.reset();
+      connector.watch();
+      hud.flashMessage('RESET');
+    }
+
     // S = cycle sessions
     if (e.key === 's' || e.key === 'S') {
       if (appState.availableSessions && appState.availableSessions.length > 1) {

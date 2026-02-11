@@ -42,6 +42,15 @@ class Desk {
     r.fillRect(px + 3, py, 10, 7, CONFIG.COL.DARK_GREY);
     r.fillRect(px + 4, py + 1, 8, 5, CONFIG.COL.BLUE);
 
+    // Keyboard (centered on desk)
+    r.fillRect(px + 4, py + 8, 7, 3, CONFIG.COL.DARK_GREY);
+    r.pixel(px + 5, py + 9, CONFIG.COL.LIGHT_GREY);
+    r.pixel(px + 7, py + 9, CONFIG.COL.LIGHT_GREY);
+    r.pixel(px + 9, py + 9, CONFIG.COL.LIGHT_GREY);
+
+    // Mouse (right of keyboard)
+    r.fillRect(px + 12, py + 9, 2, 2, CONFIG.COL.LIGHT_GREY);
+
     // Screen glow when occupied
     if (this.screenGlow > 0.3 && this.occupied) {
       r.pixel(px + 6, py - 1, CONFIG.COL.BLUE);
@@ -70,6 +79,16 @@ class Desk {
     // Right monitor (larger)
     r.fillRect(px + T + 4, py, 10, 7, CONFIG.COL.DARK_GREY);
     r.fillRect(px + T + 5, py + 1, 8, 5, CONFIG.COL.BLUE);
+
+    // Keyboard (centered between monitors)
+    r.fillRect(px + 11, py + 8, 9, 3, CONFIG.COL.DARK_GREY);
+    r.pixel(px + 12, py + 9, CONFIG.COL.LIGHT_GREY);
+    r.pixel(px + 14, py + 9, CONFIG.COL.LIGHT_GREY);
+    r.pixel(px + 16, py + 9, CONFIG.COL.LIGHT_GREY);
+    r.pixel(px + 18, py + 9, CONFIG.COL.LIGHT_GREY);
+
+    // Mouse (right of keyboard)
+    r.fillRect(px + 21, py + 9, 2, 2, CONFIG.COL.LIGHT_GREY);
 
     // Screen glow when occupied
     if (this.screenGlow > 0.3 && this.occupied) {

@@ -30,12 +30,12 @@ class Worker extends Character {
 
   // Walk to whiteboard area for briefing
   goToWhiteboard(callback) {
-    // Stand near whiteboard in a row
+    // Stand near whiteboard in a row (above desk zone)
     const offset = (this.deskIndex % 3) * 20 - 20;
     const row = this.deskIndex < 3 ? 0 : 1;
     const target = {
       x: CONFIG.WHITEBOARD_POS.x + offset,
-      y: CONFIG.WHITEBOARD_POS.y + CONFIG.TILE + row * 12
+      y: CONFIG.WHITEBOARD_POS.y + row * 8 // y=32 or y=40, stays above desks
     };
 
     this.moveTo(target, CONFIG.MOVE_SPEED, () => {
