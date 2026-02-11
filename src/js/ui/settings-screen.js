@@ -31,7 +31,14 @@ class SettingsScreen {
           padding: 5px; font-family: monospace; font-size: 12px;
         ">
 
-        <div style="margin-top: 15px; display: flex; gap: 10px;">
+        <div style="margin-top: 15px; display: flex; gap: 10px; align-items: center;">
+          <button id="si-aot" style="
+            background: #5f574f; color: #fff1e8; border: none;
+            padding: 8px 16px; font-family: monospace; font-size: 14px; cursor: pointer;
+          ">ALWAYS ON TOP: OFF</button>
+        </div>
+
+        <div style="margin-top: 10px; display: flex; gap: 10px;">
           <button id="si-launch" style="
             background: #008751; color: #fff1e8; border: none;
             padding: 8px 16px; font-family: monospace; font-size: 14px; cursor: pointer;
@@ -47,10 +54,18 @@ class SettingsScreen {
         </div>
 
         <p style="margin-top: 10px; color: #83769c; font-size: 11px;">
-          Keys 0-5 = test states | ESC = settings | D = demo cycle
+          Keys 0-5 = test states | ESC = settings | D = demo cycle | T = pin on top
         </p>
       </div>
     `;
+
+    this.aotButton = this.overlay.querySelector('#si-aot');
+    this._refreshAotButton();
+    this.aotButton.addEventListener('click', async () => {
+      const isOnTop = await window.appWindow.toggleAlwaysOnTop();
+      this.aotButton.textContent = `ALWAYS ON TOP: ${isOnTop ? 'ON' : 'OFF'}`;
+      this.aotButton.style.background = isOnTop ? '#008751' : '#5f574f';
+    });
 
     this.overlay.querySelector('#si-launch').addEventListener('click', () => {
       const prompt = this.overlay.querySelector('#si-prompt').value;
@@ -69,8 +84,15 @@ class SettingsScreen {
     });
   }
 
+  async _refreshAotButton() {
+    const isOnTop = await window.appWindow.isAlwaysOnTop();
+    this.aotButton.textContent = `ALWAYS ON TOP: ${isOnTop ? 'ON' : 'OFF'}`;
+    this.aotButton.style.background = isOnTop ? '#008751' : '#5f574f';
+  }
+
   show() {
     this.visible = true;
+    this._refreshAotButton();
     this.overlay.classList.remove('hidden');
   }
 

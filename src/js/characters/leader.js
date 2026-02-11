@@ -23,11 +23,24 @@ class Leader extends Character {
   // Walk back to own desk and sit
   goToDesk(callback) {
     this.isDrawing = false;
-    const sitPos = this.getSitPosition(this.deskIndex);
+    const sitPos = this.getLeaderSitPosition();
     this.moveTo(sitPos, CONFIG.MOVE_SPEED, () => {
       this.sitDown();
       if (callback) callback();
     });
+  }
+
+  // Walk to leader's own desk and sit (alias with explicit naming)
+  goToOwnDesk(callback) {
+    this.goToDesk(callback);
+  }
+
+  // Get the leader's sit position at their private desk
+  getLeaderSitPosition() {
+    return {
+      x: CONFIG.LEADER_DESK_POS.x * CONFIG.TILE,
+      y: CONFIG.LEADER_DESK_POS.y * CONFIG.TILE - 8,
+    };
   }
 
   update(dt, whiteboard) {

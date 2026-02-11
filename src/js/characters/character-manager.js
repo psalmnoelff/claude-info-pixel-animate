@@ -4,8 +4,7 @@ class CharacterManager {
     this.leader = new Leader();
     this.workers = [];
     this.deskOccupancy = new Array(CONFIG.DESKS.length).fill(false);
-    // Leader occupies desk 0
-    this.deskOccupancy[CONFIG.LEADER_DESK] = true;
+    // Leader has own private desk, all 6 worker desks start unoccupied
 
     // Worker tint colors cycle through these
     this.tintColors = [
@@ -55,7 +54,7 @@ class CharacterManager {
         this.deskOccupancy[w.deskIndex] = false;
       }
     }
-    this.deskOccupancy[CONFIG.LEADER_DESK] = true; // Keep leader's desk
+    // Leader has own desk, no need to reserve a worker desk
     this.workers = [];
     this.nextTintIndex = 0;
   }

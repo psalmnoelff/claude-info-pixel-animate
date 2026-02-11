@@ -44,6 +44,7 @@ class StateMachine {
 
   _onExit(state) {
     switch (state) {
+      case STATES.IDLE:
       case STATES.DONE:
         this.particles.clear();
         break;
@@ -57,8 +58,9 @@ class StateMachine {
       case STATES.IDLE:
         this.whiteboard.clearBoard();
         this.charMgr.clearWorkers();
-        leader.goToDesk();
+        leader.goToOwnDesk(() => leader.startSleeping());
         this.door.close();
+        this.sleepParticleTimer = 0;
         break;
 
       case STATES.THINKING:
@@ -97,7 +99,7 @@ class StateMachine {
 
       case STATES.DONE:
         // Everyone sleeps
-        leader.goToDesk(() => leader.startSleeping());
+        leader.goToOwnDesk(() => leader.startSleeping());
         for (const w of this.charMgr.workers) {
           if (w.isOverflow) continue;
           w.goToDeskAndType(() => w.startSleeping());
@@ -136,15 +138,17 @@ class StateMachine {
   update(dt) {
     this.stateTimer += dt;
 
-    // Sleep ZZZ particles
-    if (this.state === STATES.DONE) {
+    // Sleep ZZZ particles (for both IDLE and DONE states)
+    if (this.state === STATES.DONE || this.state === STATES.IDLE) {
       this.sleepParticleTimer += dt;
       if (this.sleepParticleTimer > 1.5) {
         this.sleepParticleTimer = 0;
-        // Spawn ZZZ above leader
+        // Spawn ZZZ above leader when sleeping
         const leader = this.charMgr.leader;
-        this.particles.spawnZZZ(leader.x + 4, leader.y);
-        // And above sleeping workers
+        if (leader.state === 'sleeping') {
+          this.particles.spawnZZZ(leader.x + 4, leader.y);
+        }
+        // And above sleeping workers (DONE state)
         for (const w of this.charMgr.workers) {
           if (w.state === 'sleeping' && w.visible) {
             this.particles.spawnZZZ(w.x + 4, w.y);

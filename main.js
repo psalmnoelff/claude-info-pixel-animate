@@ -87,6 +87,16 @@ ipcMain.handle('claude:status', () => {
   return { running: claudeProcess !== null };
 });
 
+ipcMain.handle('window:toggle-always-on-top', () => {
+  const newState = !mainWindow.isAlwaysOnTop();
+  mainWindow.setAlwaysOnTop(newState);
+  return newState;
+});
+
+ipcMain.handle('window:get-always-on-top', () => {
+  return mainWindow.isAlwaysOnTop();
+});
+
 app.whenReady().then(createWindow);
 
 app.on('window-all-closed', () => {

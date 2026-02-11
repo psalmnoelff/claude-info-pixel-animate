@@ -3,6 +3,13 @@ class HUD {
   constructor(renderer, appState) {
     this.renderer = renderer;
     this.appState = appState;
+    this._flashText = '';
+    this._flashTimer = 0;
+  }
+
+  flashMessage(text, duration = 2) {
+    this._flashText = text;
+    this._flashTimer = duration;
   }
 
   draw() {
@@ -10,10 +17,14 @@ class HUD {
     const s = this.appState;
 
     // HUD background bar at bottom
-    r.fillRect(0, CONFIG.HEIGHT - 24, CONFIG.WIDTH, 24, CONFIG.COL.BLACK);
-    r.fillRect(0, CONFIG.HEIGHT - 24, CONFIG.WIDTH, 1, CONFIG.COL.DARK_GREY);
+    r.fillRect(0, CONFIG.HEIGHT - 32, CONFIG.WIDTH, 32, CONFIG.COL.BLACK);
+    r.fillRect(0, CONFIG.HEIGHT - 32, CONFIG.WIDTH, 1, CONFIG.COL.DARK_GREY);
 
-    // Status text (top-left of HUD)
+    // Model indicator (bottom-left)
+    const modelText = s.currentModel.toUpperCase();
+    PixelFont.draw(r, modelText, 4, CONFIG.HEIGHT - 29, CONFIG.COL.YELLOW);
+
+    // Status text (below model)
     PixelFont.draw(r, s.statusText, 4, CONFIG.HEIGHT - 21, CONFIG.COL.WHITE);
 
     // Agent count
@@ -21,22 +32,31 @@ class HUD {
     PixelFont.draw(r, agentText, 4, CONFIG.HEIGHT - 13, CONFIG.COL.LIGHT_GREY);
 
     // HP bar (green) - tokens used
-    this._drawBar(r, 90, CONFIG.HEIGHT - 21, 60, 5, s.getHPPercent(), CONFIG.COL.GREEN, CONFIG.COL.DARK_GREEN, 'HP');
+    this._drawBar(r, 90, CONFIG.HEIGHT - 29, 60, 5, s.getHPPercent(), CONFIG.COL.GREEN, CONFIG.COL.DARK_GREEN, 'HP');
 
     // Mana bar (blue) - sonnet usage
-    this._drawBar(r, 90, CONFIG.HEIGHT - 13, 60, 5, s.getManaPercent(), CONFIG.COL.BLUE, CONFIG.COL.DARK_BLUE, 'MP');
+    this._drawBar(r, 90, CONFIG.HEIGHT - 21, 60, 5, s.getManaPercent(), CONFIG.COL.BLUE, CONFIG.COL.DARK_BLUE, 'MP');
 
     // Life bar (red) - session rate
-    this._drawBar(r, 170, CONFIG.HEIGHT - 21, 60, 5, s.getLifePercent(), CONFIG.COL.RED, CONFIG.COL.DARK_PURPLE, 'LP');
+    this._drawBar(r, 90, CONFIG.HEIGHT - 13, 60, 5, s.getLifePercent(), CONFIG.COL.RED, CONFIG.COL.DARK_PURPLE, 'LP');
+
+    // Context window bar (orange) - context usage
+    this._drawBar(r, 190, CONFIG.HEIGHT - 29, 60, 5, s.getContextPercent(), CONFIG.COL.ORANGE, CONFIG.COL.BROWN, 'CW');
 
     // Token count (bottom right)
     const tokenText = Math.floor(s.tokensUsed / 1000) + 'K';
     const tw = PixelFont.measure(tokenText);
     PixelFont.draw(r, tokenText, CONFIG.WIDTH - tw - 4, CONFIG.HEIGHT - 13, CONFIG.COL.LIGHT_GREY);
 
-    // Model indicator
-    const modelText = s.currentModel.toUpperCase();
-    PixelFont.draw(r, modelText, 170, CONFIG.HEIGHT - 13, CONFIG.COL.YELLOW);
+    // Flash message (centered, above HUD)
+    if (this._flashTimer > 0) {
+      this._flashTimer -= 1 / 60; // approximate frame dt
+      const fw = PixelFont.measure(this._flashText);
+      const fx = Math.floor((CONFIG.WIDTH - fw) / 2);
+      const fy = CONFIG.HEIGHT - 44;
+      r.fillRect(fx - 4, fy - 2, fw + 8, 11, CONFIG.COL.BLACK);
+      PixelFont.draw(r, this._flashText, fx, fy, CONFIG.COL.YELLOW);
+    }
   }
 
   _drawBar(r, x, y, w, h, percent, fgColor, bgColor, label) {
