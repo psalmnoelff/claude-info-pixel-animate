@@ -36,5 +36,10 @@ contextBridge.exposeInMainWorld('claude', {
     const handler = (_event, data) => callback(data);
     ipcRenderer.on('claude:watch-status', handler);
     return () => ipcRenderer.removeListener('claude:watch-status', handler);
+  },
+  onUsageUpdate: (callback) => {
+    const handler = (_event, data) => callback(data);
+    ipcRenderer.on('claude:usage-update', handler);
+    return () => ipcRenderer.removeListener('claude:usage-update', handler);
   }
 });
