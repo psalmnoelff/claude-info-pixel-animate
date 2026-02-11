@@ -26,6 +26,23 @@ class Character {
     this.moveCallback = null;
   }
 
+  // Check if a desk column has a blocking desk between two Y positions
+  // Excludes the desk at nearY (the desk the character is leaving/arriving at)
+  _columnHasBlockingDesk(tileX, startY, endY, nearY) {
+    const T = CONFIG.TILE;
+    const minY = Math.min(startY, endY);
+    const maxY = Math.max(startY, endY);
+    return CONFIG.DESKS.some(d => {
+      if (d.x !== tileX) return false;
+      const deskTop = d.y * T;
+      const deskBot = (d.y + 1) * T;
+      // Exclude the desk the character is at/going to
+      if (nearY >= deskTop && nearY < deskBot + T) return false;
+      // Does the desk overlap with the vertical path?
+      return deskTop < maxY && deskBot > minY;
+    });
+  }
+
   // Move to a target position with tweening
   moveTo(target, speed, callback) {
     // Cancel any existing movement first
@@ -58,14 +75,36 @@ class Character {
     const needsRouting = dx > T && (startInDesks || endInDesks);
 
     if (needsRouting) {
-      // 1. Go up to safe corridor (if not already above desks)
+      // Check if ascending from start column passes through a blocking desk
+      const startTileX = Math.round(this.x / T);
+      const startBlocked = this.y > SAFE_Y &&
+        this._columnHasBlockingDesk(startTileX, SAFE_Y, this.y, this.y);
+
+      // Check if descending into target column passes through a blocking desk
+      const targetTileX = Math.round(target.x / T);
+      const targetBlocked = this._columnHasBlockingDesk(targetTileX, SAFE_Y, target.y, target.y);
+
+      // 1. Go up to safe corridor, using aisle if column is blocked
       if (this.y > SAFE_Y) {
-        waypoints.push({ x: this.x, y: SAFE_Y });
+        if (startBlocked) {
+          const aisleX = (startTileX + 1) * T;
+          waypoints.push({ x: aisleX, y: this.y });
+          waypoints.push({ x: aisleX, y: SAFE_Y });
+        } else {
+          waypoints.push({ x: this.x, y: SAFE_Y });
+        }
       }
-      // 2. Walk horizontally at safe Y
-      waypoints.push({ x: target.x, y: SAFE_Y });
-      // 3. Walk down to destination
-      waypoints.push({ x: target.x, y: target.y });
+
+      // 2. Walk horizontally at safe Y, then descend
+      if (targetBlocked) {
+        const aisleX = (targetTileX + 1) * T;
+        waypoints.push({ x: aisleX, y: SAFE_Y });
+        waypoints.push({ x: aisleX, y: target.y });
+        waypoints.push({ x: target.x, y: target.y });
+      } else {
+        waypoints.push({ x: target.x, y: SAFE_Y });
+        waypoints.push({ x: target.x, y: target.y });
+      }
     } else if (dx > 1 && dy > 1) {
       // Simple L-path for short moves (within same desk column)
       // Use Y-first to go up before horizontal when in desk zone
