@@ -150,6 +150,26 @@
     // HUD
     hud.draw();
 
+    // Screen flash overlay (white flash that fades)
+    if (appState.screenFlashTimer > 0) {
+      appState.screenFlashTimer -= 1 / 60;
+      const alpha = Math.min(1, appState.screenFlashTimer / 0.1) * 0.8;
+      const bufCtx = renderer.getBufferContext();
+      bufCtx.save();
+      bufCtx.globalAlpha = alpha;
+      bufCtx.fillStyle = '#ffffff';
+      bufCtx.fillRect(0, 0, CONFIG.WIDTH, CONFIG.HEIGHT);
+      bufCtx.restore();
+    }
+
+    // Screen shake
+    if (appState.screenShakeTimer > 0) {
+      appState.screenShakeTimer -= 1 / 60;
+      renderer.shakeAmount = Math.max(1, Math.floor(appState.screenShakeTimer * 12));
+    } else {
+      renderer.shakeAmount = 0;
+    }
+
     // Present to screen
     renderer.present();
   }
@@ -162,8 +182,8 @@
   document.addEventListener('keydown', (e) => {
     if (settings.visible) return;
 
-    // Test keys (0-6)
-    if (e.key >= '0' && e.key <= '6') {
+    // Test keys (0-9)
+    if (e.key >= '0' && e.key <= '9') {
       demoMode = false;
       stateMachine.handleTestKey(e.key);
     }

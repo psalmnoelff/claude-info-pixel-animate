@@ -24,6 +24,24 @@ class ParticleSystem {
     }
   }
 
+  // Spawn muzzle flash particles (for gun shot effect)
+  spawnMuzzleFlash(x, y) {
+    for (let i = 0; i < 8; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 20 + Math.random() * 40;
+      this.particles.push({
+        type: 'sparkle',
+        x: x,
+        y: y,
+        life: 0.1 + Math.random() * 0.15,
+        maxLife: 0.25,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        color: Math.random() > 0.5 ? CONFIG.COL.YELLOW : CONFIG.COL.ORANGE,
+      });
+    }
+  }
+
   // Spawn sparkle particles (for coding/typing effects)
   spawnSparkle(x, y, color) {
     for (let i = 0; i < 3; i++) {

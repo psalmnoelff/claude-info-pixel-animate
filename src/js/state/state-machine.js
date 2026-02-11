@@ -289,12 +289,11 @@ class StateMachine {
     }
   }
 
-  // --- Worker Exit Sequence (DONE timeout) ---
+  // --- Worker Exit Sequence (leader shoots workers) ---
 
   startWorkerExitSequence() {
     const workers = this.charMgr.workers.filter(w => w.visible);
     if (workers.length === 0) {
-      // No workers to exit, go straight to IDLE
       this.transition(STATES.IDLE);
       return;
     }
@@ -302,7 +301,64 @@ class StateMachine {
     this.workersExiting = true;
     this.workerExitQueue = [...workers];
     this.workerExitTimer = 0;
-    this.door.open();
+    this.exitPhase = 'approaching'; // approaching, shooting, dying, next
+
+    // Leader stops and begins the sequence
+    const leader = this.charMgr.leader;
+    leader.stopMovement();
+    this._approachNextWorker();
+  }
+
+  _approachNextWorker() {
+    if (this.workerExitQueue.length === 0) {
+      // All workers eliminated - leader returns to desk
+      this.workersExiting = false;
+      const leader = this.charMgr.leader;
+      leader.goToOwnDesk(() => leader.startSleeping());
+      this.workerExitTimer = 0;
+      this.exitPhase = 'returning';
+      return;
+    }
+
+    const worker = this.workerExitQueue.shift();
+    this.currentExitTarget = worker;
+    this.exitPhase = 'approaching';
+
+    const leader = this.charMgr.leader;
+    // Walk near the worker (offset to the side)
+    const offsetX = worker.x > leader.x ? -18 : 18;
+    const target = { x: worker.x + offsetX, y: worker.y };
+    leader.moveTo(target, CONFIG.MOVE_SPEED, () => {
+      // Face the worker
+      leader.facingRight = worker.x > leader.x;
+      leader.setIdle();
+      // Brief pause before shooting
+      this.workerExitTimer = 0;
+      this.exitPhase = 'shooting';
+    });
+  }
+
+  _executeShot(worker) {
+    // Screen flash + shake
+    this.appState.screenFlashTimer = 0.15;
+    this.appState.screenShakeTimer = 0.3;
+
+    // Muzzle flash particles
+    const leader = this.charMgr.leader;
+    const flashX = leader.x + (leader.facingRight ? 14 : 2);
+    const flashY = leader.y + 8;
+    this.particles.spawnMuzzleFlash(flashX, flashY);
+
+    // Worker dies
+    this.exitPhase = 'dying';
+    worker.die(() => {
+      this.charMgr.removeWorker(worker);
+      this.appState.agentCount = this.charMgr.getWorkerCount();
+      this.currentExitTarget = null;
+      // Pause before approaching next worker
+      this.workerExitTimer = 0;
+      this.exitPhase = 'next';
+    });
   }
 
   updateWorkerExitSequence(dt) {
@@ -310,27 +366,29 @@ class StateMachine {
 
     this.workerExitTimer += dt;
 
-    if (this.workerExitTimer >= CONFIG.WORKER_EXIT_STAGGER && this.workerExitQueue.length > 0) {
-      this.workerExitTimer = 0;
-      const worker = this.workerExitQueue.shift();
-      worker.leave(() => {
-        this.charMgr.removeWorker(worker);
-        this.appState.agentCount = this.charMgr.getWorkerCount();
-
-        // All workers exited?
-        if (this.charMgr.getWorkerCount() === 0 && this.workerExitQueue.length === 0) {
-          this.workersExiting = false;
-          this.door.close();
-          this.transition(STATES.IDLE);
-        }
-      });
+    if (this.exitPhase === 'shooting' && this.workerExitTimer >= 0.4) {
+      this._executeShot(this.currentExitTarget);
     }
 
-    // Safety: if queue is empty but workers still walking out, wait
-    if (this.workerExitQueue.length === 0 && this.charMgr.getWorkerCount() === 0) {
-      this.workersExiting = false;
-      this.door.close();
+    if (this.exitPhase === 'next' && this.workerExitTimer >= 0.5) {
+      this._approachNextWorker();
+    }
+
+    if (this.exitPhase === 'returning' && this.workerExitTimer >= 1.0) {
+      this.exitPhase = null;
       this.transition(STATES.IDLE);
+    }
+
+    // Safety: if all workers gone
+    if (this.workerExitQueue.length === 0 && this.charMgr.getWorkerCount() === 0 &&
+        this.exitPhase !== 'dying' && this.exitPhase !== 'returning') {
+      this.workersExiting = false;
+      const leader = this.charMgr.leader;
+      if (leader.state !== 'walking') {
+        leader.goToOwnDesk(() => leader.startSleeping());
+      }
+      this.workerExitTimer = 0;
+      this.exitPhase = 'returning';
     }
   }
 
@@ -338,6 +396,8 @@ class StateMachine {
     this.workersExiting = false;
     this.workerExitQueue = [];
     this.workerExitTimer = 0;
+    this.exitPhase = null;
+    this.currentExitTarget = null;
   }
 
   // --- Lights-Out Sequence (IDLE timeout) ---
@@ -579,6 +639,22 @@ class StateMachine {
       case '5': this.transition(STATES.MULTI_AGENT); break;
       case '0': this.transition(STATES.IDLE); break;
       case '6': this.appState.janitorNeeded = true; break; // test janitor
+      case '7': { // Error on random worker
+        const vis = this.charMgr.workers.filter(w => w.visible && !w.dying);
+        if (vis.length > 0) vis[Math.floor(Math.random() * vis.length)].triggerError();
+        break;
+      }
+      case '8': { // Error on leader
+        if (this.charMgr.leader.visible) this.charMgr.leader.triggerError();
+        break;
+      }
+      case '9': { // Error on all
+        if (this.charMgr.leader.visible) this.charMgr.leader.triggerError();
+        for (const w of this.charMgr.workers) {
+          if (w.visible && !w.dying) w.triggerError();
+        }
+        break;
+      }
     }
   }
 }

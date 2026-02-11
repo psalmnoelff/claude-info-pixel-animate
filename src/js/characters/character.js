@@ -12,6 +12,7 @@ class Character {
     this.tintColor = -1; // palette index for worker tinting
     this.visible = true;
     this.id = Character._nextId++;
+    this.errorTimer = 0;
   }
 
   static _nextId = 0;
@@ -124,8 +125,13 @@ class Character {
     this.moveCallback = callback || null;
   }
 
+  triggerError() {
+    this.errorTimer = 2.0;
+  }
+
   update(dt) {
     this.animator.update(dt);
+    if (this.errorTimer > 0) this.errorTimer -= dt;
 
     if (this.tween && !this.tween.done) {
       this.tween.update(dt);
@@ -184,6 +190,43 @@ class Character {
         renderer.drawImage(sprite, Math.floor(this.x), Math.floor(this.y));
       }
     }
+
+    // Error overlay (smoke bubble + red eyes)
+    if (this.errorTimer > 0) {
+      this._drawErrorOverlay(renderer);
+    }
+  }
+
+  _drawErrorOverlay(renderer) {
+    const cx = Math.floor(this.x);
+    const cy = Math.floor(this.y);
+
+    // Red angry eyes (rapid blink)
+    if (Math.floor(this.errorTimer * 6) % 2 === 0) {
+      renderer.pixel(cx + 6, cy + 5, CONFIG.COL.RED);
+      renderer.pixel(cx + 9, cy + 5, CONFIG.COL.RED);
+    }
+
+    // Smoke/anger bubble above head
+    const bx = cx + 4;
+    const by = cy - 11;
+    const wobble = Math.floor(Math.sin(this.errorTimer * 8));
+
+    // Bubble background (rounded rect)
+    renderer.fillRect(bx + wobble + 1, by, 6, 7, CONFIG.COL.DARK_GREY);
+    renderer.fillRect(bx + wobble, by + 1, 8, 5, CONFIG.COL.DARK_GREY);
+    // Tail
+    renderer.pixel(bx + wobble + 3, by + 7, CONFIG.COL.DARK_GREY);
+    renderer.pixel(bx + wobble + 2, by + 8, CONFIG.COL.DARK_GREY);
+
+    // "!" symbol in red (centered in bubble)
+    PixelFont.draw(renderer, '!', bx + wobble + 2, by + 1, CONFIG.COL.RED);
+
+    // Smoke wisps above bubble (animated)
+    const sp = Math.floor(this.errorTimer * 3) % 3;
+    if (sp >= 0) renderer.pixel(bx + wobble + 1, by - 1, CONFIG.COL.LIGHT_GREY);
+    if (sp >= 1) renderer.pixel(bx + wobble + 5, by - 2, CONFIG.COL.LIGHT_GREY);
+    if (sp >= 2) renderer.pixel(bx + wobble + 3, by - 3, CONFIG.COL.LIGHT_GREY);
   }
 
   // Position for sitting at a desk (offset from desk tile)

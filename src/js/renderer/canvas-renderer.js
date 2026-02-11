@@ -14,6 +14,7 @@ class CanvasRenderer {
     this.scale = 1;
     this.offsetX = 0;
     this.offsetY = 0;
+    this.shakeAmount = 0;
 
     this._resize();
     window.addEventListener('resize', () => this._resize());
@@ -85,11 +86,18 @@ class CanvasRenderer {
     this.ctx.fillStyle = '#000';
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
+    // Apply screen shake offset
+    let sx = 0, sy = 0;
+    if (this.shakeAmount > 0) {
+      sx = Math.floor((Math.random() - 0.5) * this.shakeAmount * 2) * this.scale;
+      sy = Math.floor((Math.random() - 0.5) * this.shakeAmount * 2) * this.scale;
+    }
+
     // Draw buffer scaled up
     this.ctx.drawImage(
       this.buffer,
       0, 0, CONFIG.WIDTH, CONFIG.HEIGHT,
-      this.offsetX, this.offsetY,
+      this.offsetX + sx, this.offsetY + sy,
       CONFIG.WIDTH * this.scale, CONFIG.HEIGHT * this.scale
     );
   }
