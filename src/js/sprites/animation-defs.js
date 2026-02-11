@@ -55,5 +55,25 @@ const ANIMATIONS = {
   worker_phone: {
     frames: ['worker_phone_0', 'worker_phone_1', 'worker_phone_2', 'worker_phone_3'],
     fps: 6
+  },
+  janitor_idle: {
+    frames: ['janitor_walk_down_0', 'janitor_walk_down_1'],
+    fps: 2
+  },
+  janitor_walk_down: {
+    frames: ['janitor_walk_down_0', 'janitor_walk_down_1', 'janitor_walk_down_2', 'janitor_walk_down_3'],
+    fps: 6
+  },
+  janitor_walk_up: {
+    frames: ['janitor_walk_up_0', 'janitor_walk_up_1', 'janitor_walk_up_2', 'janitor_walk_up_3'],
+    fps: 6
+  },
+  janitor_walk_right: {
+    frames: ['janitor_walk_right_0', 'janitor_walk_right_1', 'janitor_walk_right_2', 'janitor_walk_right_3'],
+    fps: 6
+  },
+  janitor_mop: {
+    frames: ['janitor_mop_0', 'janitor_mop_1', 'janitor_mop_2', 'janitor_mop_3'],
+    fps: 4
   }
 };
