@@ -32,6 +32,12 @@ class StateMachine {
     this.lightsDimProgress = 0.75; // start fully dimmed
     this.lightsOutSequenceActive = false;
     this.leaderExiting = false;
+
+    // Janitor sequence (context full or compacted -> janitor cleans whiteboard)
+    this.janitorActive = false;
+    this.janitor = null;
+    this.janitorEraseTimer = 0;
+    this.janitorEraseCount = 0;
   }
 
   getState() {
@@ -411,6 +417,16 @@ class StateMachine {
       }
     }
 
+    // Janitor sequence update
+    if (this.janitorActive) {
+      this.updateJanitorSequence(dt);
+    }
+
+    // Check if janitor is needed (context full or compacted)
+    if (this.appState.janitorNeeded && !this.janitorActive && this.lightsOn) {
+      this.startJanitorSequence();
+    }
+
     // Typing sparkles
     if (this.state === STATES.CODING) {
       if (Math.random() < 0.05) {
@@ -430,6 +446,66 @@ class StateMachine {
     }
   }
 
+  // --- Janitor Sequence (context full/compacted -> clean whiteboard) ---
+
+  startJanitorSequence() {
+    if (this.janitorActive) return;
+    if (this.whiteboard.scribbles.length === 0) {
+      // Nothing to clean
+      this.appState.janitorNeeded = false;
+      return;
+    }
+
+    this.janitorActive = true;
+    this.appState.janitorNeeded = false;
+
+    // Create janitor as a character (yellow tint = hi-vis vest)
+    this.janitor = new Character('worker', CONFIG.DOOR_POS.x, CONFIG.DOOR_POS.y);
+    this.janitor.tintColor = CONFIG.COL.YELLOW;
+    this.janitor.visible = true;
+
+    this.door.open();
+
+    // Walk to whiteboard
+    this.janitor.moveTo(CONFIG.WHITEBOARD_POS, CONFIG.MOVE_SPEED, () => {
+      // Start erasing
+      this.janitor.state = 'drawing';
+      this.janitor.setAnimation('worker_type');
+      this.janitorEraseTimer = 0;
+      this.janitorEraseCount = 0;
+    });
+  }
+
+  updateJanitorSequence(dt) {
+    if (!this.janitorActive || !this.janitor) return;
+
+    this.janitor.update(dt);
+
+    // Erasing phase: gradually remove scribbles
+    if (this.janitor.state === 'drawing') {
+      this.janitorEraseTimer += dt;
+      if (this.janitorEraseTimer > 0.15) {
+        this.janitorEraseTimer = 0;
+        // Remove a batch of scribbles
+        const removeCount = Math.min(5, this.whiteboard.scribbles.length);
+        this.whiteboard.scribbles.splice(0, removeCount);
+        this.janitorEraseCount += removeCount;
+
+        // Done erasing?
+        if (this.whiteboard.scribbles.length === 0) {
+          this.whiteboard.drawProgress = 0;
+          // Walk back to door and exit
+          this.janitor.moveTo(CONFIG.DOOR_POS, CONFIG.MOVE_SPEED, () => {
+            this.janitor.visible = false;
+            this.janitor = null;
+            this.janitorActive = false;
+            this.door.close();
+          });
+        }
+      }
+    }
+  }
+
   // Handle keyboard testing (1-5 keys)
   handleTestKey(key) {
     switch (key) {
@@ -439,6 +515,7 @@ class StateMachine {
       case '4': this.transition(STATES.DONE); break;
       case '5': this.transition(STATES.MULTI_AGENT); break;
       case '0': this.transition(STATES.IDLE); break;
+      case '6': this.appState.janitorNeeded = true; break; // test janitor
     }
   }
 }
