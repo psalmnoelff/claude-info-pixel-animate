@@ -1,9 +1,10 @@
 class Desk {
-  constructor(renderer, tileX, tileY, index) {
+  constructor(renderer, tileX, tileY, index, wide) {
     this.renderer = renderer;
     this.tileX = tileX;
     this.tileY = tileY;
     this.index = index;
+    this.wide = wide || false; // 2-tile wide desk
     this.screenGlow = 0; // 0-1 glow intensity
     this.glowTimer = Math.random() * Math.PI * 2;
     this.occupied = false;
@@ -19,6 +20,14 @@ class Desk {
   }
 
   draw() {
+    if (this.wide) {
+      this._drawWide();
+    } else {
+      this._drawNormal();
+    }
+  }
+
+  _drawNormal() {
     const r = this.renderer;
     const T = CONFIG.TILE;
     const px = this.tileX * T;
@@ -38,10 +47,39 @@ class Desk {
 
     // Screen glow overlay when occupied
     if (this.screenGlow > 0.3 && this.occupied) {
-      const glowColor = CONFIG.COL.BLUE;
-      // Subtle glow pixel above monitor
-      r.pixel(px + 7, py, glowColor);
-      r.pixel(px + 8, py, glowColor);
+      r.pixel(px + 7, py, CONFIG.COL.BLUE);
+      r.pixel(px + 8, py, CONFIG.COL.BLUE);
+    }
+  }
+
+  _drawWide() {
+    const r = this.renderer;
+    const T = CONFIG.TILE;
+    const px = this.tileX * T;
+    const py = this.tileY * T;
+    const w = T * 2; // 2 tiles wide
+
+    // Single desk surface spanning 2 tiles
+    r.fillRect(px + 1, py + 2, w - 2, T - 4, CONFIG.COL.BROWN);
+    // Desk edge highlight
+    r.fillRect(px + 1, py + 2, w - 2, 1, CONFIG.COL.ORANGE);
+
+    // Left monitor
+    r.fillRect(px + 3, py + 1, 6, 5, CONFIG.COL.DARK_GREY);
+    r.fillRect(px + 4, py + 2, 4, 3, CONFIG.COL.BLUE);
+
+    // Right monitor
+    r.fillRect(px + T + 7, py + 1, 6, 5, CONFIG.COL.DARK_GREY);
+    r.fillRect(px + T + 8, py + 2, 4, 3, CONFIG.COL.BLUE);
+
+    // Screen glow when occupied
+    if (this.screenGlow > 0.3 && this.occupied) {
+      // Left monitor glow
+      r.pixel(px + 5, py, CONFIG.COL.BLUE);
+      r.pixel(px + 6, py, CONFIG.COL.BLUE);
+      // Right monitor glow
+      r.pixel(px + T + 9, py, CONFIG.COL.BLUE);
+      r.pixel(px + T + 10, py, CONFIG.COL.BLUE);
     }
   }
 

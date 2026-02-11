@@ -27,8 +27,9 @@ class StateMachine {
     this.workerExitTimer = 0;
 
     // Lights-out sequence (extended IDLE -> leader exits, lights dim)
-    this.lightsOn = true;
-    this.lightsDimProgress = 0; // 0 = fully lit, 0.75 = max dimness
+    // Start with lights off - leader enters when activity is detected
+    this.lightsOn = false;
+    this.lightsDimProgress = 0.75; // start fully dimmed
     this.lightsOutSequenceActive = false;
     this.leaderExiting = false;
   }
@@ -70,6 +71,10 @@ class StateMachine {
       case STATES.DONE:
         this.particles.clear();
         break;
+      case STATES.THINKING:
+        // Stop drawing on whiteboard when leaving THINKING
+        this.charMgr.leader.isDrawing = false;
+        break;
     }
   }
 
@@ -98,7 +103,9 @@ class StateMachine {
         break;
 
       case STATES.DELEGATING: {
+        // Leader goes back to desk while workers gather at whiteboard
         leader.stopMovement();
+        leader.goToDesk(() => leader.sitDown());
         // Spawn a worker if we don't have any
         if (this.charMgr.getWorkerCount() === 0) {
           this.door.open();

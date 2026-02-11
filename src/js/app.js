@@ -7,8 +7,7 @@
   const renderer = new CanvasRenderer(canvas);
   const whiteboard = new Whiteboard(renderer);
   const desks = CONFIG.DESKS.map((d, i) => new Desk(renderer, d.x, d.y, i));
-  const leaderDeskL = new Desk(renderer, CONFIG.LEADER_DESK_POS.x, CONFIG.LEADER_DESK_POS.y, -1);
-  const leaderDeskR = new Desk(renderer, CONFIG.LEADER_DESK_POS.x + 1, CONFIG.LEADER_DESK_POS.y, -2);
+  const leaderDesk = new Desk(renderer, CONFIG.LEADER_DESK_POS.x, CONFIG.LEADER_DESK_POS.y, -1, true);
   const door = new Door(renderer);
   const particles = new ParticleSystem();
   const appState = new AppState();
@@ -79,12 +78,9 @@
       desk.occupied = charMgr.deskOccupancy[desk.index];
       desk.update(dt);
     }
-    // Update leader desk glow (both tiles)
-    const leaderAtDesk = charMgr.leader.state === 'typing' || charMgr.leader.state === 'sitting';
-    leaderDeskL.occupied = leaderAtDesk;
-    leaderDeskR.occupied = leaderAtDesk;
-    leaderDeskL.update(dt);
-    leaderDeskR.update(dt);
+    // Update leader desk glow
+    leaderDesk.occupied = charMgr.leader.state === 'typing' || charMgr.leader.state === 'sitting';
+    leaderDesk.update(dt);
   }
 
   // Draw function (called every frame)
@@ -105,8 +101,7 @@
     for (const desk of desks) {
       desk.draw();
     }
-    leaderDeskL.draw();
-    leaderDeskR.draw();
+    leaderDesk.draw();
 
     // Characters (sorted by Y)
     charMgr.draw(renderer);
@@ -190,8 +185,9 @@
     hud.handleClick(bufX, bufY);
   });
 
-  // Initial state
+  // Initial state - lights off, leader hidden (enters when activity detected)
+  charMgr.leader.visible = false;
+  charMgr.leader.x = CONFIG.DOOR_POS.x;
+  charMgr.leader.y = CONFIG.DOOR_POS.y;
   charMgr.leader.setIdle();
-  charMgr.leader.x = CONFIG.LEADER_START.x;
-  charMgr.leader.y = CONFIG.LEADER_START.y;
 })();
