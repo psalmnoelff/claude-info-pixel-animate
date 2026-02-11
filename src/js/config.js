@@ -57,8 +57,9 @@ const CONFIG = {
     { x: 13, y: 6 },  // bottom-right
   ],
 
-  // Leader's private desk position (tile coords) - bottom-right area
-  LEADER_DESK_POS: { x: 16, y: 8 },
+  // Leader's private desk position (tile coords) - right side, 2 tiles wide
+  LEADER_DESK_POS: { x: 16, y: 6 },
+  LEADER_DESK_WIDTH: 2, // 2 tiles wide with 2 PCs
 
   // Whiteboard position
   WHITEBOARD: { x: 5, y: 0, w: 7, h: 2 },
@@ -66,9 +67,9 @@ const CONFIG = {
   // Door position
   DOOR: { x: 17, y: 0, w: 2, h: 3 },
 
-  // Leader default position (at own desk, bottom-right)
+  // Leader default position (at own desk, centered between 2-tile desk)
   LEADER_DESK: -1,  // leader doesn't use a worker desk
-  LEADER_START: { x: 16 * 16, y: 8 * 16 - 8 },
+  LEADER_START: { x: 16 * 16 + 8, y: 6 * 16 + 16 - 8 },
 
   // Whiteboard standing position
   WHITEBOARD_POS: { x: 8 * 16, y: 2 * 16 },

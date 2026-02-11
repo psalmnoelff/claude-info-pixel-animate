@@ -84,11 +84,12 @@ class Worker extends Character {
       this.x += this.phoneDir * CONFIG.WALK_SPEED * 0.5;
       this.facingRight = this.phoneDir > 0;
 
-      // Bounce at edges
+      // Bounce at edges (stop before leader desk area on the right)
+      const rightLimit = CONFIG.LEADER_DESK_POS.x * CONFIG.TILE - 8;
       if (this.x < 8) {
         this.phoneDir = 1;
         this.facingRight = true;
-      } else if (this.x > CONFIG.WIDTH - 24) {
+      } else if (this.x > rightLimit) {
         this.phoneDir = -1;
         this.facingRight = false;
       }
