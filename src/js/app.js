@@ -73,9 +73,10 @@
     charMgr.update(dt, whiteboard);
     particles.update(dt);
 
-    // Update desk glow for worker desks
+    // Update desk glow for worker desks (only when worker is actually seated)
     for (const desk of desks) {
-      desk.occupied = charMgr.deskOccupancy[desk.index];
+      const worker = charMgr.workers.find(w => w.deskIndex === desk.index);
+      desk.occupied = worker && (worker.state === 'sitting' || worker.state === 'typing' || worker.state === 'sleeping');
       desk.update(dt);
     }
     // Update leader desk glow

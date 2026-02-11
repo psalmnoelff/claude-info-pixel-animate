@@ -58,8 +58,8 @@ class Character {
       return;
     }
 
-    // Safe horizontal corridor above all desk furniture
-    const SAFE_Y = 2 * T; // y=32
+    // Safe horizontal corridor well above all desk furniture
+    const SAFE_Y = 1 * T; // y=16, sprite bottom at 32 — fully above desk tops at 48
     // Desk furniture zone (top-row desks start at y=48, bottom-row ends ~y=120)
     const DESK_ZONE_TOP = 3 * T; // y=48
     const DESK_ZONE_BOT = 8 * T; // y=128
