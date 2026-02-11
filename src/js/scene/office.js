@@ -18,7 +18,7 @@ class Office {
           r.fillRect(col * T, row * T, T, T, CONFIG.COL.DARK_BLUE);
         } else {
           // Floor
-          r.fillRect(col * T, row * T, T, T, isAlt ? CONFIG.COL.LIGHT_GREY : CONFIG.COL.DARK_GREY);
+          r.fillRect(col * T, row * T, T, T, isAlt ? CONFIG.COL.BLUE : CONFIG.COL.DARK_BLUE);
         }
       }
     }
@@ -29,18 +29,19 @@ class Office {
     // Wall decoration - subtle horizontal line
     r.fillRect(0, T - 1, CONFIG.WIDTH, 1, CONFIG.COL.INDIGO);
 
-    // Windows on the wall (between whiteboard and door, and left of whiteboard)
-    this._drawWindow(r, 1 * T + 4, 4, 20, 18);   // Left wall window
-    this._drawWindow(r, 13 * T + 2, 4, 20, 18);   // Between whiteboard and door
+    // Windows on the wall (centered in their wall sections)
+    this._drawWindow(r, 30, 4, 20, 18);   // Left section: centered in x=0..80
+    this._drawWindow(r, 222, 4, 20, 18);  // Right section: centered in x=192..272
 
     // Potted plants on the baseboard (wall level, not walkable)
     this._drawPlant(r, 4 * T + 4, 2 * T - 10, CONFIG.COL.RED);     // Left of whiteboard
     this._drawPlant(r, 12 * T + 4, 2 * T - 10, CONFIG.COL.YELLOW);  // Right of whiteboard
     this._drawPlant(r, 16 * T + 4, 2 * T - 10, CONFIG.COL.PINK);    // Left of door
 
-    // Corner plants (bottom corners, below overflow area)
-    this._drawPlant(r, 2, 10 * T - 10, CONFIG.COL.GREEN);            // Lower-left
-    this._drawPlant(r, 19 * T - 8, 10 * T - 10, CONFIG.COL.BLUE);   // Lower-right
+    // Corner plants (bottom corners, just above HUD)
+    const floorBottom = CONFIG.HEIGHT - 32 - 12;
+    this._drawPlant(r, 2, floorBottom, CONFIG.COL.GREEN);            // Lower-left
+    this._drawPlant(r, CONFIG.WIDTH - 10, floorBottom, CONFIG.COL.BLUE);   // Lower-right
   }
 
   _drawWindow(r, x, y, w, h) {

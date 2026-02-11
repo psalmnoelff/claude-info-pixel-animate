@@ -12,6 +12,7 @@ class Worker extends Character {
     this.phoneDir = 1; // Direction for phone walking
     this.lookTimer = 0; // Timer for looking left/right while typing
     this.lookInterval = 2 + Math.random() * 4; // Randomized per worker
+    this.phoneTalkTimer = Math.random() * 2; // Blink timer for phone talking
     this.setAnimation('worker_idle');
   }
 
@@ -78,6 +79,21 @@ class Worker extends Character {
     });
   }
 
+  draw(renderer) {
+    super.draw(renderer);
+
+    // Blinking speech dots when on the phone
+    if (this.state === 'phone' && this.visible) {
+      const blink = Math.floor(this.phoneTalkTimer * 3) % 3; // cycle 0,1,2
+      const bx = Math.floor(this.x) + (this.facingRight ? 14 : -2);
+      const by = Math.floor(this.y) - 2;
+      const col = CONFIG.COL.WHITE;
+      if (blink >= 0) renderer.pixel(bx, by + 2, col);
+      if (blink >= 1) renderer.pixel(bx + 2, by + 1, col);
+      if (blink >= 2) renderer.pixel(bx + 4, by, col);
+    }
+  }
+
   update(dt) {
     super.update(dt);
 
@@ -95,6 +111,7 @@ class Worker extends Character {
     if (this.state === 'phone') {
       this.x += this.phoneDir * CONFIG.WALK_SPEED * 0.5;
       this.facingRight = this.phoneDir > 0;
+      this.phoneTalkTimer += dt;
 
       // Bounce at edges (stop before leader desk area on the right)
       const rightLimit = CONFIG.LEADER_DESK_POS.x * CONFIG.TILE - 8;

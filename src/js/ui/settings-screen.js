@@ -81,9 +81,25 @@ class SettingsScreen {
           ">CLOSE</button>
         </div>
 
-        <p style="margin-top: 10px; color: #83769c; font-size: 11px;">
-          Keys 0-5 = test states | ESC = settings | D = demo | T = pin | S = cycle session
-        </p>
+        <div style="margin-top: 15px; padding: 10px; background: #000; border: 1px solid #5f574f;">
+          <p style="margin: 0 0 6px; color: #ffec27; font-size: 12px;">KEYBOARD SHORTCUTS</p>
+          <table style="width: 100%; font-size: 11px; color: #c2c3c7; border-spacing: 2px 3px;">
+            <tr><td style="color: #29adff; width: 50px;">ESC</td><td>Open / close settings</td></tr>
+            <tr><td style="color: #29adff;">D</td><td>Toggle demo mode (auto-cycle states)</td></tr>
+            <tr><td style="color: #29adff;">R</td><td>Reset to initial state</td></tr>
+            <tr><td style="color: #29adff;">T</td><td>Toggle always-on-top</td></tr>
+            <tr><td style="color: #29adff;">S</td><td>Cycle active sessions</td></tr>
+            <tr><td style="color: #29adff;">E</td><td>Workers exit one by one</td></tr>
+            <tr><td colspan="2" style="padding-top: 4px; color: #83769c;">--- Test States ---</td></tr>
+            <tr><td style="color: #ffa300;">0</td><td>IDLE (lights out)</td></tr>
+            <tr><td style="color: #ffa300;">1</td><td>THINKING (whiteboard)</td></tr>
+            <tr><td style="color: #ffa300;">2</td><td>DELEGATING (briefing)</td></tr>
+            <tr><td style="color: #ffa300;">3</td><td>CODING (typing)</td></tr>
+            <tr><td style="color: #ffa300;">4</td><td>DONE (sleeping)</td></tr>
+            <tr><td style="color: #ffa300;">5</td><td>MULTI-AGENT (spawn worker)</td></tr>
+            <tr><td style="color: #ffa300;">6</td><td>Janitor (clean whiteboard)</td></tr>
+          </table>
+        </div>
       </div>
     `;
 

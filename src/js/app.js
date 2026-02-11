@@ -200,6 +200,15 @@
       hud.flashMessage('RESET');
     }
 
+    // E = trigger worker exit sequence (one by one)
+    if (e.key === 'e' || e.key === 'E') {
+      demoMode = false;
+      if (charMgr.getWorkerCount() > 0) {
+        stateMachine.startWorkerExitSequence();
+        hud.flashMessage('WORKERS EXITING');
+      }
+    }
+
     // S = cycle sessions
     if (e.key === 's' || e.key === 'S') {
       if (appState.availableSessions && appState.availableSessions.length > 1) {

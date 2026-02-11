@@ -51,6 +51,8 @@ class Desk {
     const py = this.tileY * T;
     const sc = this.occupied ? this.screenColor : CONFIG.COL.BLUE;
 
+    // Desk frame (black outline)
+    r.fillRect(px, py + 1, 24, T - 2, CONFIG.COL.BLACK);
     // Desk surface (24px wide)
     r.fillRect(px + 1, py + 2, 22, T - 4, CONFIG.COL.BROWN);
     // Desk edge highlight
@@ -87,6 +89,8 @@ class Desk {
     const w = T * 2; // 2 tiles wide
     const sc = this.occupied ? this.screenColor : CONFIG.COL.BLUE;
 
+    // Desk frame (black outline)
+    r.fillRect(px, py + 1, w, T - 2, CONFIG.COL.BLACK);
     // Single desk surface spanning 2 tiles
     r.fillRect(px + 1, py + 2, w - 2, T - 4, CONFIG.COL.BROWN);
     // Desk edge highlight
@@ -137,10 +141,11 @@ class Desk {
     if (chairSprite) {
       r.drawImage(chairSprite, px, py);
     } else {
-      // Fallback chair
-      r.fillRect(px + 4, py + 2, 8, 6, CONFIG.COL.DARK_GREY);
-      r.fillRect(px + 5, py + 8, 2, 3, CONFIG.COL.DARK_GREY);
-      r.fillRect(px + 9, py + 8, 2, 3, CONFIG.COL.DARK_GREY);
+      // Fallback chair — white frame, black seat
+      r.fillRect(px + 4, py + 2, 8, 6, CONFIG.COL.WHITE);
+      r.fillRect(px + 5, py + 3, 6, 4, CONFIG.COL.BLACK);
+      r.fillRect(px + 5, py + 8, 2, 3, CONFIG.COL.WHITE);
+      r.fillRect(px + 9, py + 8, 2, 3, CONFIG.COL.WHITE);
     }
   }
 }
