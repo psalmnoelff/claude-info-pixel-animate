@@ -58,8 +58,8 @@ class Character {
       return;
     }
 
-    // Safe horizontal corridor well above all desk furniture
-    const SAFE_Y = 1 * T; // y=16, sprite bottom at 32 — fully above desk tops at 48
+    // Safe horizontal corridor above all desk furniture
+    const SAFE_Y = 2 * T; // y=32
     // Desk furniture zone (top-row desks start at y=48, bottom-row ends ~y=120)
     const DESK_ZONE_TOP = 3 * T; // y=48
     const DESK_ZONE_BOT = 8 * T; // y=128
@@ -69,24 +69,24 @@ class Character {
 
     const waypoints = [{ x: this.x, y: this.y }];
 
-    // Route through safe corridor above desks when:
-    // - Significant horizontal movement AND either endpoint is in the desk zone
-    // - OR significant vertical movement through the desk zone with horizontal offset
-    const needsRouting = dx > T && (startInDesks || endInDesks);
+    // Route through safe corridor above desks when either endpoint is in the desk zone
+    // and there's significant movement in any direction
+    const needsRouting = (dx > T || dy > T) && (startInDesks || endInDesks);
 
     if (needsRouting) {
-      // Check if ascending from start column passes through a blocking desk
       const startTileX = Math.round(this.x / T);
-      const startBlocked = this.y > SAFE_Y &&
-        this._columnHasBlockingDesk(startTileX, SAFE_Y, this.y, this.y);
-
-      // Check if descending into target column passes through a blocking desk
       const targetTileX = Math.round(target.x / T);
-      const targetBlocked = this._columnHasBlockingDesk(targetTileX, SAFE_Y, target.y, target.y);
 
-      // 1. Go up to safe corridor, using aisle if column is blocked
+      // Always use aisle when leaving/entering a desk column to avoid walking
+      // through desk furniture. Characters approach desks from the side.
+      const lx = CONFIG.LEADER_DESK_POS.x;
+      const hasDeskAt = (tx) => CONFIG.DESKS.some(d => d.x === tx) || tx === lx || tx === lx + 1;
+      const startHasDesk = hasDeskAt(startTileX);
+      const targetHasDesk = hasDeskAt(targetTileX);
+
+      // 1. Go up to safe corridor, stepping into aisle first if in a desk column
       if (this.y > SAFE_Y) {
-        if (startBlocked) {
+        if (startHasDesk) {
           const aisleX = (startTileX + 1) * T;
           waypoints.push({ x: aisleX, y: this.y });
           waypoints.push({ x: aisleX, y: SAFE_Y });
@@ -95,8 +95,8 @@ class Character {
         }
       }
 
-      // 2. Walk horizontally at safe Y, then descend
-      if (targetBlocked) {
+      // 2. Walk horizontally at safe Y, then descend via aisle if target is a desk column
+      if (targetHasDesk && endInDesks) {
         const aisleX = (targetTileX + 1) * T;
         waypoints.push({ x: aisleX, y: SAFE_Y });
         waypoints.push({ x: aisleX, y: target.y });

@@ -2,10 +2,10 @@
 const CONFIG = {
   // Internal canvas resolution
   WIDTH: 320,
-  HEIGHT: 180,
+  HEIGHT: 208,
   TILE: 16,
   COLS: 20,  // 320/16
-  ROWS: 11,  // 180/16 = 11.25, 11 usable rows
+  ROWS: 13,  // 208/16 = 13
 
   // PICO-8 inspired palette
   PALETTE: [
@@ -79,7 +79,7 @@ const CONFIG = {
 
   // Overflow walk area
   OVERFLOW_Y_MIN: 8 * 16,
-  OVERFLOW_Y_MAX: 9 * 16,
+  OVERFLOW_Y_MAX: 11 * 16,
 
   // Wall and floor colors
   WALL_COLOR: 1,   // dark blue

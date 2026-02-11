@@ -566,6 +566,8 @@ ipcMain.handle('window:get-always-on-top', () => {
   return mainWindow.isAlwaysOnTop();
 });
 
+app.commandLine.appendSwitch('disable-gpu-cache');
+
 app.whenReady().then(createWindow);
 
 app.on('window-all-closed', () => {
