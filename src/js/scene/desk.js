@@ -38,14 +38,16 @@ class Desk {
     // Desk edge highlight
     r.fillRect(px + 1, py + 2, T - 2, 1, CONFIG.COL.ORANGE);
 
-    // Monitor (centered)
-    r.fillRect(px + 5, py + 1, 6, 5, CONFIG.COL.DARK_GREY);
-    r.fillRect(px + 6, py + 2, 4, 3, CONFIG.COL.BLUE);
+    // Monitor (centered, larger)
+    r.fillRect(px + 3, py, 10, 7, CONFIG.COL.DARK_GREY);
+    r.fillRect(px + 4, py + 1, 8, 5, CONFIG.COL.BLUE);
 
     // Screen glow when occupied
     if (this.screenGlow > 0.3 && this.occupied) {
-      r.pixel(px + 7, py, CONFIG.COL.BLUE);
-      r.pixel(px + 8, py, CONFIG.COL.BLUE);
+      r.pixel(px + 6, py - 1, CONFIG.COL.BLUE);
+      r.pixel(px + 7, py - 1, CONFIG.COL.BLUE);
+      r.pixel(px + 8, py - 1, CONFIG.COL.BLUE);
+      r.pixel(px + 9, py - 1, CONFIG.COL.BLUE);
     }
   }
 
@@ -61,22 +63,24 @@ class Desk {
     // Desk edge highlight
     r.fillRect(px + 1, py + 2, w - 2, 1, CONFIG.COL.ORANGE);
 
-    // Left monitor
-    r.fillRect(px + 3, py + 1, 6, 5, CONFIG.COL.DARK_GREY);
-    r.fillRect(px + 4, py + 2, 4, 3, CONFIG.COL.BLUE);
+    // Left monitor (larger)
+    r.fillRect(px + 2, py, 10, 7, CONFIG.COL.DARK_GREY);
+    r.fillRect(px + 3, py + 1, 8, 5, CONFIG.COL.BLUE);
 
-    // Right monitor
-    r.fillRect(px + T + 7, py + 1, 6, 5, CONFIG.COL.DARK_GREY);
-    r.fillRect(px + T + 8, py + 2, 4, 3, CONFIG.COL.BLUE);
+    // Right monitor (larger)
+    r.fillRect(px + T + 4, py, 10, 7, CONFIG.COL.DARK_GREY);
+    r.fillRect(px + T + 5, py + 1, 8, 5, CONFIG.COL.BLUE);
 
     // Screen glow when occupied
     if (this.screenGlow > 0.3 && this.occupied) {
       // Left monitor glow
-      r.pixel(px + 5, py, CONFIG.COL.BLUE);
-      r.pixel(px + 6, py, CONFIG.COL.BLUE);
+      r.pixel(px + 5, py - 1, CONFIG.COL.BLUE);
+      r.pixel(px + 6, py - 1, CONFIG.COL.BLUE);
+      r.pixel(px + 7, py - 1, CONFIG.COL.BLUE);
       // Right monitor glow
-      r.pixel(px + T + 9, py, CONFIG.COL.BLUE);
-      r.pixel(px + T + 10, py, CONFIG.COL.BLUE);
+      r.pixel(px + T + 7, py - 1, CONFIG.COL.BLUE);
+      r.pixel(px + T + 8, py - 1, CONFIG.COL.BLUE);
+      r.pixel(px + T + 9, py - 1, CONFIG.COL.BLUE);
     }
   }
 

@@ -38,6 +38,7 @@ class StateMachine {
     this.janitor = null;
     this.janitorEraseTimer = 0;
     this.janitorEraseCount = 0;
+    this.janitorMopTimer = 0;
   }
 
   getState() {
@@ -459,20 +460,20 @@ class StateMachine {
     this.janitorActive = true;
     this.appState.janitorNeeded = false;
 
-    // Create janitor as a character (yellow tint = hi-vis vest)
-    this.janitor = new Character('worker', CONFIG.DOOR_POS.x, CONFIG.DOOR_POS.y);
-    this.janitor.tintColor = CONFIG.COL.YELLOW;
+    // Create janitor as a character with custom janitor sprites
+    this.janitor = new Character('janitor', CONFIG.DOOR_POS.x, CONFIG.DOOR_POS.y);
+    this.janitor.setAnimation('janitor_idle');
     this.janitor.visible = true;
 
     this.door.open();
 
     // Walk to whiteboard
     this.janitor.moveTo(CONFIG.WHITEBOARD_POS, CONFIG.MOVE_SPEED, () => {
-      // Start erasing
+      // Start mopping animation for 2 seconds
       this.janitor.state = 'drawing';
-      this.janitor.setAnimation('worker_type');
+      this.janitor.setAnimation('janitor_mop');
       this.janitorEraseTimer = 0;
-      this.janitorEraseCount = 0;
+      this.janitorMopTimer = 0;
     });
   }
 
@@ -481,27 +482,32 @@ class StateMachine {
 
     this.janitor.update(dt);
 
-    // Erasing phase: gradually remove scribbles
+    // Mopping/erasing phase: 2-second mop animation while gradually erasing
     if (this.janitor.state === 'drawing') {
+      this.janitorMopTimer += dt;
       this.janitorEraseTimer += dt;
-      if (this.janitorEraseTimer > 0.15) {
+
+      // Gradually remove scribbles during the 2-second mop
+      if (this.janitorEraseTimer > 0.15 && this.whiteboard.scribbles.length > 0) {
         this.janitorEraseTimer = 0;
-        // Remove a batch of scribbles
         const removeCount = Math.min(5, this.whiteboard.scribbles.length);
         this.whiteboard.scribbles.splice(0, removeCount);
-        this.janitorEraseCount += removeCount;
+      }
 
-        // Done erasing?
-        if (this.whiteboard.scribbles.length === 0) {
-          this.whiteboard.drawProgress = 0;
-          // Walk back to door and exit
-          this.janitor.moveTo(CONFIG.DOOR_POS, CONFIG.MOVE_SPEED, () => {
-            this.janitor.visible = false;
-            this.janitor = null;
-            this.janitorActive = false;
-            this.door.close();
-          });
-        }
+      // After 2 seconds of mopping, finish up
+      if (this.janitorMopTimer >= 2.0) {
+        // Clear any remaining scribbles
+        this.whiteboard.scribbles.length = 0;
+        this.whiteboard.drawProgress = 0;
+
+        // Walk back to door and exit
+        this.janitor.state = 'walking';
+        this.janitor.moveTo(CONFIG.DOOR_POS, CONFIG.MOVE_SPEED, () => {
+          this.janitor.visible = false;
+          this.janitor = null;
+          this.janitorActive = false;
+          this.door.close();
+        });
       }
     }
   }
