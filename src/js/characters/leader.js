@@ -6,6 +6,8 @@ class Leader extends Character {
     this.setAnimation('leader_idle');
     this.isDrawing = false;
     this.drawTimer = 0;
+    this.lookTimer = 0;
+    this.lookInterval = 3 + Math.random() * 3;
   }
 
   // Walk to whiteboard and start drawing
@@ -45,6 +47,16 @@ class Leader extends Character {
 
   update(dt, whiteboard) {
     super.update(dt);
+
+    // Look left/right while typing at desk
+    if (this.state === 'typing') {
+      this.lookTimer += dt;
+      if (this.lookTimer >= this.lookInterval) {
+        this.lookTimer = 0;
+        this.lookInterval = 3 + Math.random() * 3;
+        this.facingRight = !this.facingRight;
+      }
+    }
 
     // Periodically add scribbles while drawing
     if (this.isDrawing && whiteboard) {
