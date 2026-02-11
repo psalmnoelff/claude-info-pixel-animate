@@ -7,6 +7,7 @@ class ClaudeConnector {
     this.watching = false;
     this.removeListeners = [];
     this.onWatchStatusChange = null; // callback(status)
+    this.onUsageUpdate = null; // callback(usageData)
   }
 
   // Start listening for Claude events via preload bridge
@@ -51,6 +52,14 @@ class ClaudeConnector {
       }
     });
     this.removeListeners.push(removeWatchStatus);
+
+    // Listen for usage data updates
+    const removeUsageUpdate = window.claude.onUsageUpdate((data) => {
+      if (this.onUsageUpdate) {
+        this.onUsageUpdate(data);
+      }
+    });
+    this.removeListeners.push(removeUsageUpdate);
 
     this.connected = true;
     return true;

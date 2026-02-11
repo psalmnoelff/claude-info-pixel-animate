@@ -41,6 +41,11 @@
   // Connect to Claude IPC if available
   connector.connect();
 
+  // Wire usage updates from session log scanning to appState
+  connector.onUsageUpdate = (data) => {
+    appState.updateFromUsageData(data);
+  };
+
   // Auto-start listening for active Claude Code sessions
   connector.watch();
 

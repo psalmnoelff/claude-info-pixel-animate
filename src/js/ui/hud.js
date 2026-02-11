@@ -31,22 +31,27 @@ class HUD {
     const agentText = 'AGENTS:' + s.agentCount;
     PixelFont.draw(r, agentText, 4, CONFIG.HEIGHT - 13, CONFIG.COL.LIGHT_GREY);
 
-    // HP bar (green) - tokens used
+    // HP bar (green) - current session usage (5h window)
     this._drawBar(r, 90, CONFIG.HEIGHT - 29, 60, 5, s.getHPPercent(), CONFIG.COL.GREEN, CONFIG.COL.DARK_GREEN, 'HP');
 
-    // Mana bar (blue) - sonnet usage
+    // Mana bar (blue) - sonnet weekly usage
     this._drawBar(r, 90, CONFIG.HEIGHT - 21, 60, 5, s.getManaPercent(), CONFIG.COL.BLUE, CONFIG.COL.DARK_BLUE, 'MP');
 
-    // Life bar (red) - session rate
-    this._drawBar(r, 90, CONFIG.HEIGHT - 13, 60, 5, s.getLifePercent(), CONFIG.COL.RED, CONFIG.COL.DARK_PURPLE, 'LP');
+    // Life bar (red) - all models weekly usage
+    this._drawBar(r, 90, CONFIG.HEIGHT - 13, 60, 5, s.getLifePercent(), CONFIG.COL.RED, CONFIG.COL.DARK_PURPLE, 'WK');
 
-    // Context window bar (orange) - context usage
+    // Context window bar (orange) - active session context
     this._drawBar(r, 190, CONFIG.HEIGHT - 29, 60, 5, s.getContextPercent(), CONFIG.COL.ORANGE, CONFIG.COL.BROWN, 'CW');
 
-    // Token count (bottom right)
-    const tokenText = Math.floor(s.tokensUsed / 1000) + 'K';
+    // Session token count (bottom right)
+    const tokenText = Math.floor(s.sessionTokens / 1000) + 'K';
     const tw = PixelFont.measure(tokenText);
     PixelFont.draw(r, tokenText, CONFIG.WIDTH - tw - 4, CONFIG.HEIGHT - 13, CONFIG.COL.LIGHT_GREY);
+
+    // Weekly token count
+    const weekText = Math.floor(s.weeklyTokens / 1000) + 'K/W';
+    const ww = PixelFont.measure(weekText);
+    PixelFont.draw(r, weekText, CONFIG.WIDTH - ww - 4, CONFIG.HEIGHT - 21, CONFIG.COL.LIGHT_GREY);
 
     // Flash message (centered, above HUD)
     if (this._flashTimer > 0) {
@@ -82,7 +87,6 @@ class HUD {
 
     // Percentage text
     const pctText = Math.floor(percent * 100) + '%';
-    const tw = PixelFont.measure(pctText);
     PixelFont.draw(r, pctText, x + w + 2, y, CONFIG.COL.LIGHT_GREY);
   }
 }
