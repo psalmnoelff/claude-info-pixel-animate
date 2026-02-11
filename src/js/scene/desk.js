@@ -33,19 +33,16 @@ class Desk {
     const px = this.tileX * T;
     const py = this.tileY * T;
 
-    // Draw desk sprite or fallback
-    const deskSprite = SpriteRenderer.get('desk');
-    if (deskSprite) {
-      r.drawImage(deskSprite, px, py);
-    } else {
-      // Fallback: desk surface
-      r.fillRect(px + 1, py + 2, T - 2, T - 4, CONFIG.COL.BROWN);
-      // Monitor
-      r.fillRect(px + 5, py + 1, 6, 5, CONFIG.COL.DARK_GREY);
-      r.fillRect(px + 6, py + 2, 4, 3, CONFIG.COL.BLUE);
-    }
+    // Desk surface (top-down view matching leader desk style)
+    r.fillRect(px + 1, py + 2, T - 2, T - 4, CONFIG.COL.BROWN);
+    // Desk edge highlight
+    r.fillRect(px + 1, py + 2, T - 2, 1, CONFIG.COL.ORANGE);
 
-    // Screen glow overlay when occupied
+    // Monitor (centered)
+    r.fillRect(px + 5, py + 1, 6, 5, CONFIG.COL.DARK_GREY);
+    r.fillRect(px + 6, py + 2, 4, 3, CONFIG.COL.BLUE);
+
+    // Screen glow when occupied
     if (this.screenGlow > 0.3 && this.occupied) {
       r.pixel(px + 7, py, CONFIG.COL.BLUE);
       r.pixel(px + 8, py, CONFIG.COL.BLUE);
