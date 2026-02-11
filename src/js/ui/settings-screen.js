@@ -19,19 +19,44 @@ class SettingsScreen {
       ">
         <h2 style="margin: 0 0 15px; color: #ffec27; font-size: 16px;">CLAUDE INFO - SETTINGS</h2>
 
-        <label style="display: block; margin-bottom: 5px; color: #c2c3c7;">Prompt:</label>
-        <textarea id="si-prompt" rows="3" style="
-          width: 100%; background: #000; color: #fff1e8; border: 1px solid #5f574f;
-          padding: 5px; font-family: monospace; font-size: 12px; resize: vertical;
-        ">Help me with this project</textarea>
+        <div style="margin-bottom: 15px; padding: 10px; background: #000; border: 1px solid #5f574f;">
+          <p style="margin: 0 0 8px; color: #00e436; font-size: 13px;">LISTEN MODE (Recommended)</p>
+          <p style="margin: 0 0 8px; color: #c2c3c7; font-size: 11px;">
+            Watches your active Claude Code terminal session automatically.
+            Just run Claude Code normally in your terminal.
+          </p>
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <button id="si-listen" style="
+              background: #29adff; color: #fff1e8; border: none;
+              padding: 8px 16px; font-family: monospace; font-size: 14px; cursor: pointer;
+            ">LISTEN</button>
+            <span id="si-listen-status" style="color: #83769c; font-size: 11px;"></span>
+          </div>
+        </div>
 
-        <label style="display: block; margin: 10px 0 5px; color: #c2c3c7;">Working Directory:</label>
-        <input id="si-workdir" type="text" value="" style="
-          width: 100%; background: #000; color: #fff1e8; border: 1px solid #5f574f;
-          padding: 5px; font-family: monospace; font-size: 12px;
-        ">
+        <details style="margin-bottom: 10px;">
+          <summary style="color: #c2c3c7; cursor: pointer; font-size: 12px;">Advanced: Launch new session (API key)</summary>
+          <div style="margin-top: 10px;">
+            <label style="display: block; margin-bottom: 5px; color: #c2c3c7;">Prompt:</label>
+            <textarea id="si-prompt" rows="3" style="
+              width: 100%; background: #000; color: #fff1e8; border: 1px solid #5f574f;
+              padding: 5px; font-family: monospace; font-size: 12px; resize: vertical;
+            ">Help me with this project</textarea>
 
-        <div style="margin-top: 15px; display: flex; gap: 10px; align-items: center;">
+            <label style="display: block; margin: 10px 0 5px; color: #c2c3c7;">Working Directory:</label>
+            <input id="si-workdir" type="text" value="" style="
+              width: 100%; background: #000; color: #fff1e8; border: 1px solid #5f574f;
+              padding: 5px; font-family: monospace; font-size: 12px;
+            ">
+            <button id="si-launch" style="
+              margin-top: 8px;
+              background: #008751; color: #fff1e8; border: none;
+              padding: 8px 16px; font-family: monospace; font-size: 14px; cursor: pointer;
+            ">LAUNCH</button>
+          </div>
+        </details>
+
+        <div style="margin-top: 10px; display: flex; gap: 10px; align-items: center;">
           <button id="si-aot" style="
             background: #5f574f; color: #fff1e8; border: none;
             padding: 8px 16px; font-family: monospace; font-size: 14px; cursor: pointer;
@@ -39,10 +64,6 @@ class SettingsScreen {
         </div>
 
         <div style="margin-top: 10px; display: flex; gap: 10px;">
-          <button id="si-launch" style="
-            background: #008751; color: #fff1e8; border: none;
-            padding: 8px 16px; font-family: monospace; font-size: 14px; cursor: pointer;
-          ">LAUNCH</button>
           <button id="si-demo" style="
             background: #ab5236; color: #fff1e8; border: none;
             padding: 8px 16px; font-family: monospace; font-size: 14px; cursor: pointer;
@@ -58,6 +79,36 @@ class SettingsScreen {
         </p>
       </div>
     `;
+
+    this.listenButton = this.overlay.querySelector('#si-listen');
+    this.listenStatus = this.overlay.querySelector('#si-listen-status');
+
+    this.listenButton.addEventListener('click', async () => {
+      if (this.connector.watching) {
+        await this.connector.unwatch();
+        this.listenButton.textContent = 'LISTEN';
+        this.listenButton.style.background = '#29adff';
+        this.listenStatus.textContent = '';
+      } else {
+        await this.connector.watch();
+        this.listenButton.textContent = 'STOP LISTENING';
+        this.listenButton.style.background = '#ff004d';
+        this.listenStatus.textContent = 'Watching for active sessions...';
+      }
+    });
+
+    // Update status when watch finds a session
+    this.connector.onWatchStatusChange = (status) => {
+      if (status.watching && status.file) {
+        this.listenStatus.textContent = 'Watching: ' + status.file;
+        this.listenStatus.style.color = '#00e436';
+      } else if (status.watching) {
+        this.listenStatus.textContent = 'Watching for active sessions...';
+        this.listenStatus.style.color = '#83769c';
+      } else {
+        this.listenStatus.textContent = '';
+      }
+    };
 
     this.aotButton = this.overlay.querySelector('#si-aot');
     this._refreshAotButton();
