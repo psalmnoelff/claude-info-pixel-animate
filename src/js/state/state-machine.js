@@ -39,6 +39,9 @@ class StateMachine {
     this.janitorEraseTimer = 0;
     this.janitorEraseCount = 0;
     this.janitorMopTimer = 0;
+
+    // Activity timer - auto-transition to DONE after inactivity
+    this.lastActivityTime = 0;
   }
 
   getState() {
@@ -62,6 +65,7 @@ class StateMachine {
 
     this.state = newState;
     this.stateTimer = 0;
+    this.lastActivityTime = 0;
     this.appState.statusText = newState;
 
     this._onExit(oldState);
@@ -399,6 +403,13 @@ class StateMachine {
       this.startLightsOutSequence();
     }
 
+    // Inactivity timeout: auto-transition to DONE if no events for 2 minutes
+    this.lastActivityTime += dt;
+    const activeStates = [STATES.CODING, STATES.THINKING, STATES.DELEGATING, STATES.MULTI_AGENT, STATES.OVERFLOW];
+    if (activeStates.includes(this.state) && this.lastActivityTime > CONFIG.INACTIVITY_TIMEOUT) {
+      this.transition(STATES.DONE);
+    }
+
     // Sleep ZZZ particles (for both IDLE and DONE states)
     if (this.state === STATES.DONE || this.state === STATES.IDLE) {
       this.sleepParticleTimer += dt;
@@ -482,6 +493,9 @@ class StateMachine {
 
     this.janitor.update(dt);
 
+    // Callback may have nulled janitor when walk-back tween completed
+    if (!this.janitor) return;
+
     // Mopping/erasing phase: 2-second mop animation while gradually erasing
     if (this.janitor.state === 'drawing') {
       this.janitorMopTimer += dt;
@@ -547,6 +561,11 @@ class StateMachine {
     leader.setIdle();
 
     this.door.close();
+  }
+
+  // Signal that new events are arriving (resets inactivity timer)
+  signalActivity() {
+    this.lastActivityTime = 0;
   }
 
   // Handle keyboard testing (1-5 keys)

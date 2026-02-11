@@ -12,6 +12,8 @@ let tailPosition = 0;     // current read offset for tailing
 let selectedSessionId = null; // which session is currently selected for usage tracking
 let lastCWValue = null;   // cached CW value to prevent blinking
 let fileSizes = new Map(); // path -> last known size (for growth detection)
+let cachedWeeklyUsage = null; // cached weekly usage result
+let weeklyUsageCacheTime = 0; // when it was last computed
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -359,6 +361,8 @@ function stopSessionWatcher() {
   tailPosition = 0;
   lastCWValue = null;
   fileSizes.clear();
+  cachedWeeklyUsage = null;
+  weeklyUsageCacheTime = 0;
 }
 
 function startSessionWatcher() {
@@ -373,9 +377,16 @@ function startSessionWatcher() {
 
   // --- Helper: send usage update ---
   function sendUsageUpdate(force) {
-    const weeklyUsage = computeWeeklyUsage();
-    if (!weeklyUsage) return;
+    const now = Date.now();
 
+    // Only recompute weekly usage at most every 60 seconds (expensive: reads all files)
+    if (force || !cachedWeeklyUsage || now - weeklyUsageCacheTime > 60000) {
+      cachedWeeklyUsage = computeWeeklyUsage();
+      weeklyUsageCacheTime = now;
+    }
+    if (!cachedWeeklyUsage) return;
+
+    // CW update is cheap (single file read) - do it whenever the file changes
     let currentSessionContext = lastCWValue || 0;
     if (currentFile) {
       try {
@@ -390,7 +401,7 @@ function startSessionWatcher() {
     }
 
     mainWindow?.webContents.send('claude:usage-update', {
-      ...weeklyUsage,
+      ...cachedWeeklyUsage,
       currentSessionContext,
     });
   }
@@ -487,31 +498,31 @@ function startSessionWatcher() {
     switchToFile(initialActive);
   }
 
-  // Main interval: session detection (every 5s) + fallback polling + usage updates
+  // Main interval: session detection + fallback polling (2s interval, fs.watch handles real-time)
   sessionWatcher = setInterval(() => {
     scanCount++;
 
-    // Check for session changes every 10 polls (~5 seconds)
-    if (!currentFile || scanCount % 10 === 0) {
+    // Check for session changes every 3 polls (~6 seconds)
+    if (!currentFile || scanCount % 3 === 0) {
       const active = findActiveSessionByGrowth();
       if (active) {
         switchToFile(active); // no-op if same file
       }
     }
 
-    // Update session list every 60 polls (~30 seconds)
-    if (scanCount % 60 === 0) {
+    // Update session list every 30 polls (~60 seconds)
+    if (scanCount % 30 === 0) {
       sendSessionList();
     }
 
     // Fallback: read new lines even if fs.watch didn't fire
     const hasNew = processNewLines();
 
-    // Periodic usage update every 30 polls (~15 seconds) or on new events
-    if (hasNew || scanCount % 30 === 0) {
+    // Periodic usage update every 15 polls (~30 seconds) or on new events
+    if (hasNew || scanCount % 15 === 0) {
       sendUsageUpdate(false);
     }
-  }, 500);
+  }, 2000);
 }
 
 ipcMain.handle('claude:watch', () => {
