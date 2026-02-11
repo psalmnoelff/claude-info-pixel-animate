@@ -6,10 +6,12 @@ const { spawn } = require('child_process');
 
 let mainWindow;
 let claudeProcess = null;
-let sessionWatcher = null; // file watcher for session logs
+let sessionWatcher = null; // polling interval for session detection
+let activeFileWatcher = null; // fs.watch on the active session file
 let tailPosition = 0;     // current read offset for tailing
 let selectedSessionId = null; // which session is currently selected for usage tracking
 let lastCWValue = null;   // cached CW value to prevent blinking
+let fileSizes = new Map(); // path -> last known size (for growth detection)
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -88,13 +90,13 @@ function getClaudeProjectsDir() {
   return path.join(home, '.claude', 'projects');
 }
 
-// Find ALL active sessions (modified in last 30 minutes)
-function findActiveSessions() {
+// Find active sessions within a time window
+function findActiveSessions(windowMinutes = 5) {
   const projectsDir = getClaudeProjectsDir();
   if (!fs.existsSync(projectsDir)) return [];
 
   const now = Date.now();
-  const thirtyMinAgo = now - 30 * 60 * 1000;
+  const cutoff = now - windowMinutes * 60 * 1000;
   const sessions = [];
 
   function scanDir(dir, projectName) {
@@ -103,13 +105,12 @@ function findActiveSessions() {
       for (const entry of entries) {
         const fullPath = path.join(dir, entry.name);
         if (entry.isDirectory() && entry.name !== 'session-memory') {
-          // Use directory name as project context
           const proj = projectName || entry.name;
           scanDir(fullPath, proj);
         } else if (entry.isFile() && entry.name.endsWith('.jsonl') && !entry.name.includes('subagent')) {
           try {
             const stat = fs.statSync(fullPath);
-            if (stat.mtimeMs > thirtyMinAgo) {
+            if (stat.mtimeMs > cutoff) {
               sessions.push({
                 id: entry.name.replace('.jsonl', ''),
                 path: fullPath,
@@ -124,24 +125,42 @@ function findActiveSessions() {
   }
 
   scanDir(projectsDir, null);
-
-  // Sort newest first
   sessions.sort((a, b) => b.mtime - a.mtime);
   return sessions;
 }
 
-// Find the most recently modified session (backwards compat)
-function findActiveSession() {
-  const sessions = findActiveSessions();
+// Find the best active session by detecting which file is growing
+function findActiveSessionByGrowth() {
+  // Use 5-min window for auto-detection (tight)
+  const sessions = findActiveSessions(5);
   if (sessions.length === 0) return null;
 
-  // If a session is selected, prefer it
+  // If a session is manually selected, prefer it
   if (selectedSessionId) {
     const selected = sessions.find(s => s.id === selectedSessionId);
     if (selected) return selected.path;
   }
 
-  return sessions[0].path;
+  let bestPath = null;
+  let bestScore = -1;
+
+  for (const session of sessions) {
+    try {
+      const stat = fs.statSync(session.path);
+      const prevSize = fileSizes.get(session.path) || 0;
+      const isGrowing = prevSize > 0 && stat.size > prevSize;
+      fileSizes.set(session.path, stat.size);
+
+      // Growing files get top priority, then sort by recency
+      const score = (isGrowing ? 1e15 : 0) + stat.mtimeMs;
+      if (score > bestScore) {
+        bestScore = score;
+        bestPath = session.path;
+      }
+    } catch (e) { /* skip */ }
+  }
+
+  return bestPath;
 }
 
 // Read new lines from a JSONL file starting at offset
@@ -194,7 +213,6 @@ function convertSessionEvent(raw) {
 
     // Result events in session logs have subType or specific markers
     if (event.type === 'result' || (event.message && event.message.stop_reason === 'end_turn' && !event.message.content?.some(b => b.type === 'tool_use'))) {
-      // Check if this is a final result with usage
       if (event.message?.usage) {
         return JSON.stringify({
           type: 'result',
@@ -229,8 +247,15 @@ function convertSessionEvent(raw) {
 // --- Usage computation from session logs ---
 
 // Compute token usage from a single JSONL file
+// Returns cumulative output tokens AND the last message's input_tokens (= current CW)
 function computeUsageFromFile(filePath) {
-  const usage = { outputTokens: 0, inputTokens: 0, sonnetOutputTokens: 0, messageCount: 0 };
+  const usage = {
+    outputTokens: 0,
+    inputTokens: 0,
+    sonnetOutputTokens: 0,
+    messageCount: 0,
+    lastInputTokens: 0, // last message's full context = current CW size
+  };
   try {
     const content = fs.readFileSync(filePath, 'utf8');
     const lines = content.split('\n');
@@ -244,6 +269,13 @@ function computeUsageFromFile(filePath) {
           usage.outputTokens += u.output_tokens || 0;
           usage.inputTokens += (u.input_tokens || 0) + (u.cache_creation_input_tokens || 0);
           usage.messageCount++;
+
+          // The LAST assistant message's input_tokens represents the current context window.
+          // Each API call sends the full conversation, so input_tokens already includes everything.
+          usage.lastInputTokens = (u.input_tokens || 0)
+            + (u.cache_read_input_tokens || 0)
+            + (u.cache_creation_input_tokens || 0);
+
           // Track sonnet usage
           const model = event.message?.model || '';
           if (model.includes('sonnet')) {
@@ -256,12 +288,13 @@ function computeUsageFromFile(filePath) {
   return usage;
 }
 
-// Compute usage for a specific session file only
+// Compute usage for a specific session file (CW = last message's input tokens)
 function computeUsageForSession(filePath) {
   const usage = computeUsageFromFile(filePath);
   return {
     sessionTokens: usage.outputTokens,
-    currentSessionContext: usage.inputTokens + usage.outputTokens,
+    // FIXED: use last message's input_tokens as context window (not cumulative sum)
+    currentSessionContext: usage.lastInputTokens,
   };
 }
 
@@ -274,11 +307,10 @@ function computeWeeklyUsage() {
   const fiveHoursAgo = now - 5 * 60 * 60 * 1000;
   const oneWeekAgo = now - 7 * 24 * 60 * 60 * 1000;
 
-  let sessionTokens = 0;  // current session window (5h)
-  let weeklyTokens = 0;   // all models this week
-  let sonnetWeekly = 0;   // sonnet this week
+  let sessionTokens = 0;
+  let weeklyTokens = 0;
+  let sonnetWeekly = 0;
 
-  // Find all JSONL session files
   const sessionFiles = [];
   function scanDir(dir) {
     try {
@@ -302,31 +334,31 @@ function computeWeeklyUsage() {
 
   for (const sf of sessionFiles) {
     const usage = computeUsageFromFile(sf.path);
-
-    // Weekly totals
     weeklyTokens += usage.outputTokens;
     sonnetWeekly += usage.sonnetOutputTokens;
 
-    // Session window (last 5 hours)
     if (sf.mtime > fiveHoursAgo) {
       sessionTokens += usage.outputTokens;
     }
   }
 
-  return {
-    sessionTokens,
-    weeklyTokens,
-    sonnetWeekly,
-  };
+  return { sessionTokens, weeklyTokens, sonnetWeekly };
 }
+
+// --- Session watcher with fs.watch + growth detection ---
 
 function stopSessionWatcher() {
   if (sessionWatcher) {
     clearInterval(sessionWatcher);
     sessionWatcher = null;
   }
+  if (activeFileWatcher) {
+    try { activeFileWatcher.close(); } catch (e) { /* ignore */ }
+    activeFileWatcher = null;
+  }
   tailPosition = 0;
   lastCWValue = null;
+  fileSizes.clear();
 }
 
 function startSessionWatcher() {
@@ -334,72 +366,58 @@ function startSessionWatcher() {
 
   let currentFile = null;
   let scanCount = 0;
-  let lastFileSize = 0; // Track file size to detect actual changes for CW
+  let lastFileSize = 0;
 
   // Send initial status
   mainWindow?.webContents.send('claude:watch-status', { watching: true, file: null });
 
-  // Compute and send initial usage
-  const weeklyUsage = computeWeeklyUsage();
-  if (weeklyUsage) {
-    const initialUsage = { ...weeklyUsage, currentSessionContext: 0 };
-    mainWindow?.webContents.send('claude:usage-update', initialUsage);
-  }
+  // --- Helper: send usage update ---
+  function sendUsageUpdate(force) {
+    const weeklyUsage = computeWeeklyUsage();
+    if (!weeklyUsage) return;
 
-  // Send initial session list
-  const initialSessions = findActiveSessions();
-  if (initialSessions.length > 0) {
-    mainWindow?.webContents.send('claude:sessions-list', initialSessions.map(s => ({
-      id: s.id,
-      project: s.project,
-      mtime: s.mtime,
-    })));
-  }
-
-  sessionWatcher = setInterval(() => {
-    // Re-scan for active session every 10 polls (~5 seconds)
-    if (!currentFile || scanCount % 10 === 0) {
-      const active = findActiveSession();
-      if (active && active !== currentFile) {
-        currentFile = active;
-        // Start from end of file (only watch new events)
-        try {
-          const stat = fs.statSync(currentFile);
-          tailPosition = stat.size;
+    let currentSessionContext = lastCWValue || 0;
+    if (currentFile) {
+      try {
+        const stat = fs.statSync(currentFile);
+        if (force || stat.size !== lastFileSize) {
+          const sessionUsage = computeUsageForSession(currentFile);
+          currentSessionContext = sessionUsage.currentSessionContext;
+          lastCWValue = currentSessionContext;
           lastFileSize = stat.size;
-        } catch (e) {
-          tailPosition = 0;
-          lastFileSize = 0;
         }
-        mainWindow?.webContents.send('claude:watch-status', {
-          watching: true,
-          file: path.basename(currentFile)
-        });
-      }
-
-      // Update session list every 10 polls
-      if (scanCount % 10 === 0) {
-        const sessions = findActiveSessions();
-        if (sessions.length > 0) {
-          mainWindow?.webContents.send('claude:sessions-list', sessions.map(s => ({
-            id: s.id,
-            project: s.project,
-            mtime: s.mtime,
-          })));
-        }
-      }
+      } catch (e) { /* keep cached */ }
     }
-    scanCount++;
 
-    if (!currentFile) return;
+    mainWindow?.webContents.send('claude:usage-update', {
+      ...weeklyUsage,
+      currentSessionContext,
+    });
+  }
 
-    // Read new lines
+  // --- Helper: send session list (wider window for manual selection) ---
+  function sendSessionList() {
+    const sessions = findActiveSessions(30); // 30-min window for the list
+    if (sessions.length > 0) {
+      mainWindow?.webContents.send('claude:sessions-list', sessions.map(s => ({
+        id: s.id,
+        project: s.project,
+        mtime: s.mtime,
+      })));
+    }
+  }
+
+  // --- Helper: process new lines from tailed file ---
+  function processNewLines() {
+    if (!currentFile) return false;
+
     const { lines, newOffset } = readNewLines(currentFile, tailPosition);
-    tailPosition = newOffset;
+    if (lines.length === 0) return false;
 
+    tailPosition = newOffset;
     let hasNewEvents = false;
+
     for (const line of lines) {
-      // Convert to stream-json format and send
       const converted = convertSessionEvent(line);
       if (converted) {
         mainWindow?.webContents.send('claude:event', converted);
@@ -407,32 +425,93 @@ function startSessionWatcher() {
       }
     }
 
-    // Recompute usage every 30 polls (~15 seconds) or when new events arrive
-    if (hasNewEvents || scanCount % 30 === 0) {
-      const weeklyUsage = computeWeeklyUsage();
-      if (weeklyUsage) {
-        // Compute CW from only the currently-tailed file
-        let currentSessionContext = lastCWValue || 0;
-        if (currentFile) {
-          try {
-            const stat = fs.statSync(currentFile);
-            // Only recompute CW if the file actually changed
-            if (stat.size !== lastFileSize || hasNewEvents) {
-              const sessionUsage = computeUsageForSession(currentFile);
-              currentSessionContext = sessionUsage.currentSessionContext;
-              lastCWValue = currentSessionContext;
-              lastFileSize = stat.size;
-            }
-          } catch (e) { /* keep cached value */ }
-        }
+    return hasNewEvents;
+  }
 
-        mainWindow?.webContents.send('claude:usage-update', {
-          ...weeklyUsage,
-          currentSessionContext,
-        });
+  // --- Helper: switch to watching a different file ---
+  function switchToFile(filePath) {
+    if (filePath === currentFile) return;
+
+    currentFile = filePath;
+    lastCWValue = null;
+
+    // Start tailing from end of file (only new events)
+    try {
+      const stat = fs.statSync(currentFile);
+      tailPosition = stat.size;
+      lastFileSize = stat.size;
+    } catch (e) {
+      tailPosition = 0;
+      lastFileSize = 0;
+    }
+
+    // Set up fs.watch on the active file for instant change detection
+    if (activeFileWatcher) {
+      try { activeFileWatcher.close(); } catch (e) { /* ignore */ }
+      activeFileWatcher = null;
+    }
+
+    try {
+      activeFileWatcher = fs.watch(currentFile, { persistent: false }, (eventType) => {
+        if (eventType === 'change') {
+          const hasNew = processNewLines();
+          if (hasNew) {
+            sendUsageUpdate(false);
+          }
+        }
+      });
+      activeFileWatcher.on('error', () => {
+        // fs.watch can fail on some systems, fall back to polling only
+        activeFileWatcher = null;
+      });
+    } catch (e) {
+      // fs.watch not available, polling will handle it
+    }
+
+    mainWindow?.webContents.send('claude:watch-status', {
+      watching: true,
+      file: path.basename(currentFile)
+    });
+
+    // Compute initial usage for the new file
+    sendUsageUpdate(true);
+  }
+
+  // Send initial data
+  sendUsageUpdate(true);
+  sendSessionList();
+
+  // Do an initial scan to find and switch to the best session immediately
+  const initialActive = findActiveSessionByGrowth();
+  if (initialActive) {
+    switchToFile(initialActive);
+  }
+
+  // Main interval: session detection (every 5s) + fallback polling + usage updates
+  sessionWatcher = setInterval(() => {
+    scanCount++;
+
+    // Check for session changes every 10 polls (~5 seconds)
+    if (!currentFile || scanCount % 10 === 0) {
+      const active = findActiveSessionByGrowth();
+      if (active) {
+        switchToFile(active); // no-op if same file
       }
     }
-  }, 500); // Poll every 500ms
+
+    // Update session list every 60 polls (~30 seconds)
+    if (scanCount % 60 === 0) {
+      sendSessionList();
+    }
+
+    // Fallback: read new lines even if fs.watch didn't fire
+    const hasNew = processNewLines();
+
+    // Periodic usage update every 30 polls (~15 seconds) or on new events
+    if (hasNew || scanCount % 30 === 0) {
+      sendUsageUpdate(false);
+    }
+  }, 500);
 }
 
 ipcMain.handle('claude:watch', () => {
@@ -462,7 +541,6 @@ ipcMain.handle('claude:status', () => {
 
 ipcMain.handle('claude:select-session', (_event, sessionId) => {
   selectedSessionId = sessionId;
-  // Reset CW cache so it recomputes for new session
   lastCWValue = null;
   return { ok: true };
 });
