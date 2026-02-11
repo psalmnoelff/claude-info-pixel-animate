@@ -328,7 +328,7 @@ class StateMachine {
     // Walk near the worker (offset to the side)
     const offsetX = worker.x > leader.x ? -18 : 18;
     const target = { x: worker.x + offsetX, y: worker.y };
-    leader.moveTo(target, CONFIG.MOVE_SPEED, () => {
+    leader.moveTo(target, CONFIG.MOVE_SPEED * 2.5, () => {
       // Face the worker
       leader.facingRight = worker.x > leader.x;
       leader.setIdle();
@@ -349,16 +349,16 @@ class StateMachine {
     const flashY = leader.y + 8;
     this.particles.spawnMuzzleFlash(flashX, flashY);
 
-    // Worker dies
-    this.exitPhase = 'dying';
+    // Worker dies (animation plays independently)
     worker.die(() => {
       this.charMgr.removeWorker(worker);
       this.appState.agentCount = this.charMgr.getWorkerCount();
-      this.currentExitTarget = null;
-      // Pause before approaching next worker
-      this.workerExitTimer = 0;
-      this.exitPhase = 'next';
     });
+
+    // Move to next immediately (don't wait for death anim)
+    this.currentExitTarget = null;
+    this.workerExitTimer = 0;
+    this.exitPhase = 'next';
   }
 
   updateWorkerExitSequence(dt) {
@@ -366,11 +366,11 @@ class StateMachine {
 
     this.workerExitTimer += dt;
 
-    if (this.exitPhase === 'shooting' && this.workerExitTimer >= 0.4) {
+    if (this.exitPhase === 'shooting' && this.workerExitTimer >= 0.15) {
       this._executeShot(this.currentExitTarget);
     }
 
-    if (this.exitPhase === 'next' && this.workerExitTimer >= 0.5) {
+    if (this.exitPhase === 'next' && this.workerExitTimer >= 0.3) {
       this._approachNextWorker();
     }
 
