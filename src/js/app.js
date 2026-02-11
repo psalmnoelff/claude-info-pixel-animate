@@ -106,6 +106,11 @@
     // Characters (sorted by Y)
     charMgr.draw(renderer);
 
+    // Janitor (drawn with characters)
+    if (stateMachine.janitor && stateMachine.janitor.visible) {
+      stateMachine.janitor.draw(renderer);
+    }
+
     // Particles (on top)
     particles.draw(renderer);
 
@@ -127,8 +132,8 @@
   document.addEventListener('keydown', (e) => {
     if (settings.visible) return;
 
-    // Test keys
-    if (e.key >= '0' && e.key <= '5') {
+    // Test keys (0-6)
+    if (e.key >= '0' && e.key <= '6') {
       demoMode = false;
       stateMachine.handleTestKey(e.key);
     }
