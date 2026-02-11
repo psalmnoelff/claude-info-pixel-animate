@@ -512,6 +512,43 @@ class StateMachine {
     }
   }
 
+  // Full reset to initial state (lights off, leader hidden)
+  reset() {
+    // Cancel any active sequences
+    this._cancelWorkerExit();
+    if (this.janitorActive && this.janitor) {
+      this.janitor.visible = false;
+      this.janitor = null;
+      this.janitorActive = false;
+    }
+
+    // Clear workers and particles
+    this.charMgr.clearWorkers();
+    this.whiteboard.clearBoard();
+    this.particles.clear();
+
+    // Reset state
+    this.state = STATES.IDLE;
+    this.stateTimer = 0;
+    this.appState.statusText = 'IDLE';
+    this.appState.agentCount = 0;
+
+    // Lights off, leader hidden at door
+    this.lightsOn = false;
+    this.lightsDimProgress = 0.75;
+    this.lightsOutSequenceActive = false;
+    this.leaderExiting = false;
+
+    const leader = this.charMgr.leader;
+    leader.stopMovement();
+    leader.visible = false;
+    leader.x = CONFIG.DOOR_POS.x;
+    leader.y = CONFIG.DOOR_POS.y;
+    leader.setIdle();
+
+    this.door.close();
+  }
+
   // Handle keyboard testing (1-5 keys)
   handleTestKey(key) {
     switch (key) {

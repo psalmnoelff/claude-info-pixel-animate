@@ -31,15 +31,48 @@ class Character {
     // Cancel any existing movement first
     this.stopMovement();
 
-    // Build waypoint path (L-shaped: first X, then Y)
-    const waypoints = [];
-    waypoints.push({ x: this.x, y: this.y });
+    const T = CONFIG.TILE;
+    const dx = Math.abs(target.x - this.x);
+    const dy = Math.abs(target.y - this.y);
 
-    // If need to move on both axes, go X first then Y
-    if (Math.abs(target.x - this.x) > 1 && Math.abs(target.y - this.y) > 1) {
-      waypoints.push({ x: target.x, y: this.y });
+    // Safe horizontal corridor above all desk furniture
+    const SAFE_Y = 2 * T; // y=32
+    // Desk furniture zone (top-row desks start at y=48, bottom-row ends ~y=120)
+    const DESK_ZONE_TOP = 3 * T; // y=48
+    const DESK_ZONE_BOT = 8 * T; // y=128
+
+    const startInDesks = this.y >= DESK_ZONE_TOP && this.y <= DESK_ZONE_BOT;
+    const endInDesks = target.y >= DESK_ZONE_TOP && target.y <= DESK_ZONE_BOT;
+
+    const waypoints = [{ x: this.x, y: this.y }];
+
+    // Route through safe corridor above desks when:
+    // - Significant horizontal movement AND either endpoint is in the desk zone
+    // - OR significant vertical movement through the desk zone with horizontal offset
+    const needsRouting = dx > T && (startInDesks || endInDesks);
+
+    if (needsRouting) {
+      // 1. Go up to safe corridor (if not already above desks)
+      if (this.y > SAFE_Y) {
+        waypoints.push({ x: this.x, y: SAFE_Y });
+      }
+      // 2. Walk horizontally at safe Y
+      waypoints.push({ x: target.x, y: SAFE_Y });
+      // 3. Walk down to destination
+      waypoints.push({ x: target.x, y: target.y });
+    } else if (dx > 1 && dy > 1) {
+      // Simple L-path for short moves (within same desk column)
+      // Use Y-first to go up before horizontal when in desk zone
+      if (startInDesks && target.y < this.y) {
+        waypoints.push({ x: this.x, y: target.y });
+        waypoints.push({ x: target.x, y: target.y });
+      } else {
+        waypoints.push({ x: target.x, y: this.y });
+        waypoints.push({ x: target.x, y: target.y });
+      }
+    } else {
+      waypoints.push({ x: target.x, y: target.y });
     }
-    waypoints.push({ x: target.x, y: target.y });
 
     this.tween = new TweenPath(waypoints, speed || CONFIG.MOVE_SPEED);
     this.state = 'walking';
