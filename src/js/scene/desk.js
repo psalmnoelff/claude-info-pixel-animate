@@ -8,14 +8,31 @@ class Desk {
     this.screenGlow = 0; // 0-1 glow intensity
     this.glowTimer = Math.random() * Math.PI * 2;
     this.occupied = false;
+    this.screenColor = CONFIG.COL.BLUE;
+    this.screenColorTimer = 0;
   }
 
   update(dt) {
     if (this.occupied) {
       this.glowTimer += dt * 3;
       this.screenGlow = 0.5 + 0.5 * Math.sin(this.glowTimer);
+
+      // Cycle screen color to simulate code changes
+      this.screenColorTimer += dt;
+      if (this.screenColorTimer > 0.4) {
+        this.screenColorTimer = 0;
+        const brightColors = [
+          CONFIG.COL.BLUE, CONFIG.COL.GREEN, CONFIG.COL.RED,
+          CONFIG.COL.ORANGE, CONFIG.COL.YELLOW, CONFIG.COL.PINK,
+          CONFIG.COL.WHITE, CONFIG.COL.LIGHT_GREY, CONFIG.COL.INDIGO,
+          CONFIG.COL.PEACH, CONFIG.COL.DARK_GREEN, CONFIG.COL.DARK_PURPLE,
+        ];
+        this.screenColor = brightColors[Math.floor(Math.random() * brightColors.length)];
+      }
     } else {
       this.screenGlow = 0;
+      this.screenColor = CONFIG.COL.BLUE;
+      this.screenColorTimer = 0;
     }
   }
 
@@ -30,33 +47,35 @@ class Desk {
   _drawNormal() {
     const r = this.renderer;
     const T = CONFIG.TILE;
-    const px = this.tileX * T;
+    const px = this.tileX * T - 4; // center 24px desk on 16px tile
     const py = this.tileY * T;
+    const sc = this.occupied ? this.screenColor : CONFIG.COL.BLUE;
 
-    // Desk surface (top-down view matching leader desk style)
-    r.fillRect(px + 1, py + 2, T - 2, T - 4, CONFIG.COL.BROWN);
+    // Desk surface (24px wide)
+    r.fillRect(px + 1, py + 2, 22, T - 4, CONFIG.COL.BROWN);
     // Desk edge highlight
-    r.fillRect(px + 1, py + 2, T - 2, 1, CONFIG.COL.ORANGE);
+    r.fillRect(px + 1, py + 2, 22, 1, CONFIG.COL.ORANGE);
 
-    // Monitor (centered, larger)
-    r.fillRect(px + 3, py, 10, 7, CONFIG.COL.DARK_GREY);
-    r.fillRect(px + 4, py + 1, 8, 5, CONFIG.COL.BLUE);
+    // Monitor (centered)
+    r.fillRect(px + 7, py, 10, 7, CONFIG.COL.DARK_GREY);
+    r.fillRect(px + 8, py + 1, 8, 5, sc);
 
     // Keyboard (centered on desk)
-    r.fillRect(px + 4, py + 8, 7, 3, CONFIG.COL.DARK_GREY);
-    r.pixel(px + 5, py + 9, CONFIG.COL.LIGHT_GREY);
-    r.pixel(px + 7, py + 9, CONFIG.COL.LIGHT_GREY);
-    r.pixel(px + 9, py + 9, CONFIG.COL.LIGHT_GREY);
+    r.fillRect(px + 7, py + 8, 9, 3, CONFIG.COL.DARK_GREY);
+    r.pixel(px + 8, py + 9, CONFIG.COL.LIGHT_GREY);
+    r.pixel(px + 10, py + 9, CONFIG.COL.LIGHT_GREY);
+    r.pixel(px + 12, py + 9, CONFIG.COL.LIGHT_GREY);
+    r.pixel(px + 14, py + 9, CONFIG.COL.LIGHT_GREY);
 
     // Mouse (right of keyboard)
-    r.fillRect(px + 12, py + 9, 2, 2, CONFIG.COL.LIGHT_GREY);
+    r.fillRect(px + 18, py + 9, 2, 2, CONFIG.COL.LIGHT_GREY);
 
     // Screen glow when occupied
     if (this.screenGlow > 0.3 && this.occupied) {
-      r.pixel(px + 6, py - 1, CONFIG.COL.BLUE);
-      r.pixel(px + 7, py - 1, CONFIG.COL.BLUE);
-      r.pixel(px + 8, py - 1, CONFIG.COL.BLUE);
-      r.pixel(px + 9, py - 1, CONFIG.COL.BLUE);
+      r.pixel(px + 10, py - 1, sc);
+      r.pixel(px + 11, py - 1, sc);
+      r.pixel(px + 12, py - 1, sc);
+      r.pixel(px + 13, py - 1, sc);
     }
   }
 
@@ -66,6 +85,7 @@ class Desk {
     const px = this.tileX * T;
     const py = this.tileY * T;
     const w = T * 2; // 2 tiles wide
+    const sc = this.occupied ? this.screenColor : CONFIG.COL.BLUE;
 
     // Single desk surface spanning 2 tiles
     r.fillRect(px + 1, py + 2, w - 2, T - 4, CONFIG.COL.BROWN);
@@ -74,11 +94,11 @@ class Desk {
 
     // Left monitor (larger)
     r.fillRect(px + 2, py, 10, 7, CONFIG.COL.DARK_GREY);
-    r.fillRect(px + 3, py + 1, 8, 5, CONFIG.COL.BLUE);
+    r.fillRect(px + 3, py + 1, 8, 5, sc);
 
     // Right monitor (larger)
     r.fillRect(px + T + 4, py, 10, 7, CONFIG.COL.DARK_GREY);
-    r.fillRect(px + T + 5, py + 1, 8, 5, CONFIG.COL.BLUE);
+    r.fillRect(px + T + 5, py + 1, 8, 5, sc);
 
     // Keyboard (centered between monitors)
     r.fillRect(px + 11, py + 8, 9, 3, CONFIG.COL.DARK_GREY);
@@ -93,13 +113,13 @@ class Desk {
     // Screen glow when occupied
     if (this.screenGlow > 0.3 && this.occupied) {
       // Left monitor glow
-      r.pixel(px + 5, py - 1, CONFIG.COL.BLUE);
-      r.pixel(px + 6, py - 1, CONFIG.COL.BLUE);
-      r.pixel(px + 7, py - 1, CONFIG.COL.BLUE);
+      r.pixel(px + 5, py - 1, sc);
+      r.pixel(px + 6, py - 1, sc);
+      r.pixel(px + 7, py - 1, sc);
       // Right monitor glow
-      r.pixel(px + T + 7, py - 1, CONFIG.COL.BLUE);
-      r.pixel(px + T + 8, py - 1, CONFIG.COL.BLUE);
-      r.pixel(px + T + 9, py - 1, CONFIG.COL.BLUE);
+      r.pixel(px + T + 7, py - 1, sc);
+      r.pixel(px + T + 8, py - 1, sc);
+      r.pixel(px + T + 9, py - 1, sc);
     }
   }
 
@@ -107,7 +127,10 @@ class Desk {
   drawChair() {
     const r = this.renderer;
     const T = CONFIG.TILE;
-    const px = this.tileX * T;
+    let px = this.tileX * T;
+    if (this.wide) {
+      px = this.tileX * T + T / 2; // center on 2-tile wide desk
+    }
     const py = (this.tileY + 1) * T;
 
     const chairSprite = SpriteRenderer.get('chair');

@@ -97,18 +97,47 @@
     // Door
     door.draw();
 
-    // Desks (behind characters)
-    for (const desk of desks) {
-      desk.draw();
+    // Y-sorted rendering: desks (with chairs) + characters interleaved by depth
+    const drawList = [];
+
+    // Add all desks
+    const allDesks = [...desks, leaderDesk];
+    for (const desk of allDesks) {
+      drawList.push({
+        sortY: (desk.tileY + 1) * CONFIG.TILE,
+        isChar: false,
+        draw: () => { desk.draw(); desk.drawChair(); },
+      });
     }
-    leaderDesk.draw();
 
-    // Characters (sorted by Y)
-    charMgr.draw(renderer);
+    // Add visible characters
+    const allChars = [charMgr.leader, ...charMgr.workers].filter(c => c.visible);
+    for (const c of allChars) {
+      drawList.push({
+        sortY: c.y + 16,
+        isChar: true,
+        draw: () => c.draw(renderer),
+      });
+    }
 
-    // Janitor (drawn with characters)
+    // Add janitor if visible
     if (stateMachine.janitor && stateMachine.janitor.visible) {
-      stateMachine.janitor.draw(renderer);
+      const j = stateMachine.janitor;
+      drawList.push({
+        sortY: j.y + 16,
+        isChar: true,
+        draw: () => j.draw(renderer),
+      });
+    }
+
+    // Sort by Y; on ties desks draw first (characters appear in front)
+    drawList.sort((a, b) => {
+      if (a.sortY !== b.sortY) return a.sortY - b.sortY;
+      return (a.isChar ? 1 : 0) - (b.isChar ? 1 : 0);
+    });
+
+    for (const item of drawList) {
+      item.draw();
     }
 
     // Particles (on top)
