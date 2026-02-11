@@ -8,6 +8,7 @@
   const office = new Office(renderer);
   const whiteboard = new Whiteboard(renderer);
   const desks = CONFIG.DESKS.map((d, i) => new Desk(renderer, d.x, d.y, i));
+  const leaderDesk = new Desk(renderer, CONFIG.LEADER_DESK_POS.x, CONFIG.LEADER_DESK_POS.y, -1);
   const door = new Door(renderer);
   const particles = new ParticleSystem();
   const appState = new AppState();
@@ -58,12 +59,14 @@
     charMgr.update(dt, whiteboard);
     particles.update(dt);
 
-    // Update desk glow
+    // Update desk glow for worker desks
     for (const desk of desks) {
-      desk.occupied = charMgr.deskOccupancy[desk.index] ||
-        (desk.index === CONFIG.LEADER_DESK && charMgr.leader.state === 'typing');
+      desk.occupied = charMgr.deskOccupancy[desk.index];
       desk.update(dt);
     }
+    // Update leader desk glow
+    leaderDesk.occupied = charMgr.leader.state === 'typing' || charMgr.leader.state === 'sitting';
+    leaderDesk.update(dt);
   }
 
   // Draw function (called every frame)
@@ -84,6 +87,7 @@
     for (const desk of desks) {
       desk.draw();
     }
+    leaderDesk.draw();
 
     // Characters (sorted by Y)
     charMgr.draw(renderer);
@@ -121,6 +125,14 @@
     // ESC = settings
     if (e.key === 'Escape') {
       settings.toggle();
+    }
+
+    // T = toggle always on top
+    if (e.key === 't' || e.key === 'T') {
+      window.appWindow.toggleAlwaysOnTop().then((isOnTop) => {
+        console.log(`Always on top: ${isOnTop ? 'ON' : 'OFF'}`);
+        hud.flashMessage(`PIN ON TOP: ${isOnTop ? 'ON' : 'OFF'}`);
+      });
     }
 
     // D = demo mode

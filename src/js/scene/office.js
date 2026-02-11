@@ -17,7 +17,7 @@ class Office {
           r.fillRect(col * T, row * T, T, T, CONFIG.COL.DARK_BLUE);
         } else {
           // Floor
-          r.fillRect(col * T, row * T, T, T, isAlt ? CONFIG.COL.DARK_GREY : CONFIG.COL.BLACK);
+          r.fillRect(col * T, row * T, T, T, isAlt ? CONFIG.COL.LIGHT_GREY : CONFIG.COL.DARK_GREY);
         }
       }
     }

@@ -1,11 +1,11 @@
 // Constants and configuration
 const CONFIG = {
   // Internal canvas resolution
-  WIDTH: 256,
-  HEIGHT: 192,
+  WIDTH: 320,
+  HEIGHT: 180,
   TILE: 16,
-  COLS: 16,  // 256/16
-  ROWS: 12,  // 192/12
+  COLS: 20,  // 320/16
+  ROWS: 11,  // 180/16 = 11.25, 11 usable rows
 
   // PICO-8 inspired palette
   PALETTE: [
@@ -47,35 +47,38 @@ const CONFIG = {
     PEACH: 15,
   },
 
-  // Desk positions (tile coords)
+  // Desk positions (tile coords) - 6 worker desks
   DESKS: [
-    { x: 2, y: 3 },   // top-left
-    { x: 7, y: 3 },   // top-center
-    { x: 12, y: 3 },  // top-right
-    { x: 2, y: 6 },   // bottom-left
-    { x: 7, y: 6 },   // bottom-center
-    { x: 12, y: 6 },  // bottom-right
+    { x: 3, y: 3 },   // top-left
+    { x: 8, y: 3 },   // top-center
+    { x: 13, y: 3 },  // top-right
+    { x: 3, y: 6 },   // bottom-left
+    { x: 8, y: 6 },   // bottom-center
+    { x: 13, y: 6 },  // bottom-right
   ],
 
+  // Leader's private desk position (tile coords) - bottom-right area
+  LEADER_DESK_POS: { x: 16, y: 8 },
+
   // Whiteboard position
-  WHITEBOARD: { x: 4, y: 0, w: 6, h: 2 },
+  WHITEBOARD: { x: 5, y: 0, w: 7, h: 2 },
 
   // Door position
-  DOOR: { x: 14, y: 0, w: 2, h: 2 },
+  DOOR: { x: 17, y: 0, w: 2, h: 3 },
 
-  // Leader default position (at desk 0, sitting)
-  LEADER_DESK: 0,
-  LEADER_START: { x: 2 * 16, y: 3 * 16 - 8 },
+  // Leader default position (at own desk, bottom-right)
+  LEADER_DESK: -1,  // leader doesn't use a worker desk
+  LEADER_START: { x: 16 * 16, y: 8 * 16 - 8 },
 
   // Whiteboard standing position
-  WHITEBOARD_POS: { x: 6 * 16, y: 2 * 16 },
+  WHITEBOARD_POS: { x: 8 * 16, y: 2 * 16 },
 
   // Door entry position
-  DOOR_POS: { x: 14 * 16, y: 2 * 16 },
+  DOOR_POS: { x: 17 * 16, y: 2 * 16 },
 
   // Overflow walk area
-  OVERFLOW_Y_MIN: 9 * 16,
-  OVERFLOW_Y_MAX: 11 * 16,
+  OVERFLOW_Y_MIN: 8 * 16,
+  OVERFLOW_Y_MAX: 9 * 16,
 
   // Wall and floor colors
   WALL_COLOR: 1,   // dark blue

@@ -15,6 +15,10 @@ class TokenTracker {
     if (usage.cache_read_input_tokens) {
       this.appState.updateTokens(usage.cache_read_input_tokens, 0);
     }
+
+    // Track context window usage
+    const totalContext = (usage.input_tokens || 0) + (usage.output_tokens || 0) + (usage.cache_read_input_tokens || 0);
+    this.appState.updateContext(totalContext);
   }
 
   // Process model information
