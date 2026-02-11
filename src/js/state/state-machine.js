@@ -49,7 +49,8 @@ class StateMachine {
   }
 
   transition(newState) {
-    if (this.state === newState) return;
+    // Allow self-transition for MULTI_AGENT so each Task call spawns a new worker
+    if (this.state === newState && newState !== STATES.MULTI_AGENT) return;
 
     const oldState = this.state;
 
