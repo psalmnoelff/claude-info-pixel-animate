@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Claude Info</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <canvas id="game-canvas"></canvas>
+  <div id="settings-overlay" class="hidden"></div>
+  <script src="js/config.js"></script>
+  <script src="js/renderer/canvas-renderer.js"></script>
+  <script src="js/sprites/sprite-data.js"></script>
+  <script src="js/sprites/sprite-renderer.js"></script>
+  <script src="js/sprites/animation-defs.js"></script>
+  <script src="js/ui/pixel-font.js"></script>
+  <script src="js/scene/office.js"></script>
+  <script src="js/scene/whiteboard.js"></script>
+  <script src="js/scene/desk.js"></script>
+  <script src="js/scene/door.js"></script>
+  <script src="js/animation/tween.js"></script>
+  <script src="js/animation/animator.js"></script>
+  <script src="js/animation/particles.js"></script>
+  <script src="js/game-loop.js"></script>
+  <script src="js/characters/character.js"></script>
+  <script src="js/characters/leader.js"></script>
+  <script src="js/characters/worker.js"></script>
+  <script src="js/characters/character-manager.js"></script>
+  <script src="js/state/app-state.js"></script>
+  <script src="js/state/state-machine.js"></script>
+  <script src="js/claude/token-tracker.js"></script>
+  <script src="js/claude/stream-parser.js"></script>
+  <script src="js/claude/event-classifier.js"></script>
+  <script src="js/claude/claude-connector.js"></script>
+  <script src="js/ui/hud.js"></script>
+  <script src="js/ui/settings-screen.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
