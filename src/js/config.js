@@ -94,5 +94,6 @@ const CONFIG = {
   // Timeouts (seconds)
   DONE_TIMEOUT: 180,        // 3 minutes in DONE before workers exit
   IDLE_TIMEOUT: 300,        // 5 minutes in IDLE before lights-out
+  INACTIVITY_TIMEOUT: 120,  // 2 minutes of no events -> auto DONE
   WORKER_EXIT_STAGGER: 1.5, // seconds between worker departures
 };

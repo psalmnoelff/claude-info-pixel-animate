@@ -19,6 +19,7 @@ class EventClassifier {
 
   // Process a parsed event and trigger state transitions
   classify(event) {
+    this.stateMachine.signalActivity();
     const type = StreamParser.getEventType(event);
 
     switch (type) {

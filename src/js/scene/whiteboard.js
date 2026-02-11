@@ -38,26 +38,18 @@ class Whiteboard {
     const T = CONFIG.TILE;
     const wb = CONFIG.WHITEBOARD;
 
-    // Draw whiteboard background
-    for (let tx = wb.x; tx < wb.x + wb.w; tx++) {
-      for (let ty = wb.y; ty < wb.y + wb.h; ty++) {
-        const sprite = SpriteRenderer.get('whiteboard');
-        if (sprite) {
-          r.drawImage(sprite, tx * T, ty * T);
-        } else {
-          // Fallback rectangle
-          r.fillRect(tx * T, ty * T, T, T, CONFIG.COL.WHITE);
-          r.fillRect(tx * T, ty * T, T, 1, CONFIG.COL.LIGHT_GREY);
-          r.fillRect(tx * T, ty * T, 1, T, CONFIG.COL.LIGHT_GREY);
-        }
-      }
-    }
+    // Draw whiteboard as one solid rectangle
+    const bx = wb.x * T;
+    const by = wb.y * T;
+    const bw = wb.w * T;
+    const bh = wb.h * T;
+    r.fillRect(bx + 1, by + 1, bw - 2, bh - 2, CONFIG.COL.WHITE);
 
-    // Draw border around entire whiteboard
-    r.fillRect(wb.x * T, wb.y * T, wb.w * T, 1, CONFIG.COL.DARK_GREY);
-    r.fillRect(wb.x * T, (wb.y + wb.h) * T - 1, wb.w * T, 1, CONFIG.COL.DARK_GREY);
-    r.fillRect(wb.x * T, wb.y * T, 1, wb.h * T, CONFIG.COL.DARK_GREY);
-    r.fillRect((wb.x + wb.w) * T - 1, wb.y * T, 1, wb.h * T, CONFIG.COL.DARK_GREY);
+    // Border
+    r.fillRect(bx, by, bw, 1, CONFIG.COL.DARK_GREY);
+    r.fillRect(bx, by + bh - 1, bw, 1, CONFIG.COL.DARK_GREY);
+    r.fillRect(bx, by, 1, bh, CONFIG.COL.DARK_GREY);
+    r.fillRect(bx + bw - 1, by, 1, bh, CONFIG.COL.DARK_GREY);
 
     // Draw scribbles
     for (const s of this.scribbles) {
