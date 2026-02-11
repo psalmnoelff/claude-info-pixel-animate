@@ -1,7 +1,8 @@
 // Office background rendering - floor, walls, furniture
 class Office {
-  constructor(renderer) {
+  constructor(renderer, stateMachine) {
     this.renderer = renderer;
+    this.stateMachine = stateMachine;
   }
 
   draw() {
@@ -27,5 +28,15 @@ class Office {
 
     // Wall decoration - subtle horizontal line
     r.fillRect(0, T - 1, CONFIG.WIDTH, 1, CONFIG.COL.INDIGO);
+  }
+
+  // Draw dark overlay for lights-out effect (call after all scene drawing, before HUD)
+  drawDimOverlay() {
+    if (!this.stateMachine || this.stateMachine.lightsDimProgress <= 0) return;
+
+    const ctx = this.renderer.getBufferContext();
+    const alpha = this.stateMachine.lightsDimProgress;
+    ctx.fillStyle = `rgba(0, 0, 10, ${alpha})`;
+    ctx.fillRect(0, 0, CONFIG.WIDTH, CONFIG.HEIGHT - 32); // Don't dim the HUD
   }
 }

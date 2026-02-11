@@ -8,6 +8,7 @@ class ClaudeConnector {
     this.removeListeners = [];
     this.onWatchStatusChange = null; // callback(status)
     this.onUsageUpdate = null; // callback(usageData)
+    this.onSessionsList = null; // callback(sessions[])
   }
 
   // Start listening for Claude events via preload bridge
@@ -60,6 +61,16 @@ class ClaudeConnector {
       }
     });
     this.removeListeners.push(removeUsageUpdate);
+
+    // Listen for session list updates
+    if (window.claude.onSessionsList) {
+      const removeSessionsList = window.claude.onSessionsList((sessions) => {
+        if (this.onSessionsList) {
+          this.onSessionsList(sessions);
+        }
+      });
+      this.removeListeners.push(removeSessionsList);
+    }
 
     this.connected = true;
     return true;

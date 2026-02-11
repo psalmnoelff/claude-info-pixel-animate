@@ -5,7 +5,6 @@
 
   // Core systems
   const renderer = new CanvasRenderer(canvas);
-  const office = new Office(renderer);
   const whiteboard = new Whiteboard(renderer);
   const desks = CONFIG.DESKS.map((d, i) => new Desk(renderer, d.x, d.y, i));
   const leaderDesk = new Desk(renderer, CONFIG.LEADER_DESK_POS.x, CONFIG.LEADER_DESK_POS.y, -1);
@@ -14,6 +13,7 @@
   const appState = new AppState();
   const charMgr = new CharacterManager();
   const stateMachine = new StateMachine(charMgr, whiteboard, door, particles, appState);
+  const office = new Office(renderer, stateMachine);
   const hud = new HUD(renderer, appState);
 
   // Claude integration
@@ -23,7 +23,7 @@
   const connector = new ClaudeConnector(streamParser, eventClassifier);
 
   // Settings screen
-  const settings = new SettingsScreen(settingsOverlay, connector);
+  const settings = new SettingsScreen(settingsOverlay, connector, appState);
 
   // Demo mode cycling
   let demoMode = false;
@@ -44,6 +44,12 @@
   // Wire usage updates from session log scanning to appState
   connector.onUsageUpdate = (data) => {
     appState.updateFromUsageData(data);
+  };
+
+  // Wire session list updates
+  connector.onSessionsList = (sessions) => {
+    appState.availableSessions = sessions;
+    settings.updateSessionList(sessions);
   };
 
   // Auto-start listening for active Claude Code sessions
@@ -100,14 +106,11 @@
     // Characters (sorted by Y)
     charMgr.draw(renderer);
 
-    // Desk chairs (in front of characters sitting)
-    // Only draw chairs for unoccupied desks
-    // for (const desk of desks) {
-    //   if (!desk.occupied) desk.drawChair();
-    // }
-
     // Particles (on top)
     particles.draw(renderer);
+
+    // Dim overlay (after scene, before HUD)
+    office.drawDimOverlay();
 
     // HUD
     hud.draw();
@@ -152,6 +155,34 @@
         stateMachine.transition(demoSequence[0]);
       }
     }
+
+    // S = cycle sessions
+    if (e.key === 's' || e.key === 'S') {
+      if (appState.availableSessions && appState.availableSessions.length > 1) {
+        const sessions = appState.availableSessions;
+        const currentIdx = sessions.findIndex(s => s.id === appState.selectedSessionId);
+        const nextIdx = (currentIdx + 1) % sessions.length;
+        appState.selectedSessionId = sessions[nextIdx].id;
+        if (window.claude && window.claude.selectSession) {
+          window.claude.selectSession(sessions[nextIdx].id);
+        }
+        hud.flashMessage('SESSION: ' + (sessions[nextIdx].project || sessions[nextIdx].id).substring(0, 16));
+      }
+    }
+  });
+
+  // Click handling for HUD bars
+  canvas.addEventListener('click', (e) => {
+    if (settings.visible) return;
+
+    // Convert screen coords to buffer coords
+    const rect = canvas.getBoundingClientRect();
+    const screenX = e.clientX - rect.left;
+    const screenY = e.clientY - rect.top;
+    const bufX = (screenX - renderer.offsetX) / renderer.scale;
+    const bufY = (screenY - renderer.offsetY) / renderer.scale;
+
+    hud.handleClick(bufX, bufY);
   });
 
   // Initial state
