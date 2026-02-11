@@ -34,6 +34,10 @@ class AppState {
     // Multi-session tracking
     this.availableSessions = [];
     this.selectedSessionId = null;
+
+    // Screen effects
+    this.screenShakeTimer = 0;
+    this.screenFlashTimer = 0;
   }
 
   // Update from computed usage data (from main process scanning session logs)

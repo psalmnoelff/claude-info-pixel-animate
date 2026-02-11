@@ -60,7 +60,8 @@ class StreamParser {
       if (block.type === 'tool_result') {
         return {
           id: block.tool_use_id,
-          content: block.content
+          content: block.content,
+          is_error: block.is_error || false
         };
       }
     }

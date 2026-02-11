@@ -98,6 +98,9 @@ class SettingsScreen {
             <tr><td style="color: #ffa300;">4</td><td>DONE (sleeping)</td></tr>
             <tr><td style="color: #ffa300;">5</td><td>MULTI-AGENT (spawn worker)</td></tr>
             <tr><td style="color: #ffa300;">6</td><td>Janitor (clean whiteboard)</td></tr>
+            <tr><td style="color: #ffa300;">7</td><td>Error on random worker</td></tr>
+            <tr><td style="color: #ffa300;">8</td><td>Error on team leader</td></tr>
+            <tr><td style="color: #ffa300;">9</td><td>Error on all characters</td></tr>
           </table>
         </div>
       </div>

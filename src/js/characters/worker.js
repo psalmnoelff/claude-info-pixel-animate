@@ -14,6 +14,14 @@ class Worker extends Character {
     this.lookInterval = 2 + Math.random() * 4; // Randomized per worker
     this.phoneTalkTimer = Math.random() * 2; // Blink timer for phone talking
     this.setAnimation('worker_idle');
+
+    // Death animation state
+    this.dying = false;
+    this.deathTimer = 0;
+    this.deathCallback = null;
+    this.bodyAlpha = 1;
+    this.soulAlpha = 1;
+    this.soulY = 0;
   }
 
   // Enter through door and walk to assigned desk
@@ -79,7 +87,24 @@ class Worker extends Character {
     });
   }
 
+  // Die animation: fall over, soul floats up, fade out
+  die(callback) {
+    this.dying = true;
+    this.deathTimer = 0;
+    this.deathCallback = callback;
+    this.bodyAlpha = 1;
+    this.soulAlpha = 1;
+    this.soulY = 0;
+    this.state = 'dead';
+    this.stopMovement();
+  }
+
   draw(renderer) {
+    if (this.dying && this.visible) {
+      this._drawDeath(renderer);
+      return;
+    }
+
     super.draw(renderer);
 
     // Blinking speech dots when on the phone
@@ -94,7 +119,79 @@ class Worker extends Character {
     }
   }
 
+  _drawDeath(renderer) {
+    const cx = Math.floor(this.x);
+    const cy = Math.floor(this.y);
+    const bufCtx = renderer.getBufferContext();
+
+    // Draw lying body (rotated 90 degrees - fallen over)
+    const spriteName = this.animator.getCurrentSprite();
+    let sprite;
+    if (this.tintColor >= 0) {
+      sprite = SpriteRenderer.getTinted(spriteName, this.tintColor);
+    } else {
+      sprite = SpriteRenderer.get(spriteName);
+    }
+
+    if (sprite && this.bodyAlpha > 0.01) {
+      bufCtx.save();
+      bufCtx.globalAlpha = this.bodyAlpha;
+      bufCtx.translate(cx + 8, cy + 14);
+      bufCtx.rotate(Math.PI / 2);
+      bufCtx.drawImage(sprite, -8, -8);
+      bufCtx.restore();
+    }
+
+    // Draw soul floating up (after 0.8 seconds)
+    if (this.deathTimer >= 0.8 && this.soulAlpha > 0.01) {
+      bufCtx.save();
+      bufCtx.globalAlpha = this.soulAlpha;
+
+      const sx = cx + 4;
+      const sy = cy - this.soulY;
+
+      // Ghost shape (small white figure)
+      renderer.fillRect(sx + 2, sy, 4, 1, CONFIG.COL.WHITE);
+      renderer.fillRect(sx + 1, sy + 1, 6, 1, CONFIG.COL.WHITE);
+      renderer.fillRect(sx + 1, sy + 2, 6, 1, CONFIG.COL.WHITE);
+      renderer.fillRect(sx + 1, sy + 3, 6, 1, CONFIG.COL.WHITE);
+      // Wavy bottom edge
+      renderer.fillRect(sx, sy + 4, 2, 1, CONFIG.COL.WHITE);
+      renderer.fillRect(sx + 3, sy + 4, 2, 1, CONFIG.COL.WHITE);
+      renderer.fillRect(sx + 6, sy + 4, 2, 1, CONFIG.COL.WHITE);
+      // Eyes
+      renderer.pixel(sx + 2, sy + 2, CONFIG.COL.BLACK);
+      renderer.pixel(sx + 5, sy + 2, CONFIG.COL.BLACK);
+
+      bufCtx.restore();
+    }
+  }
+
   update(dt) {
+    // Death animation update
+    if (this.dying) {
+      this.deathTimer += dt;
+
+      if (this.deathTimer < 0.8) {
+        // Phase 1: lying still
+      } else if (this.deathTimer < 3.0) {
+        // Phase 2: soul rises, body and soul fade
+        this.soulY = (this.deathTimer - 0.8) * 25;
+        this.bodyAlpha = Math.max(0, 1 - (this.deathTimer - 0.8) / 2.0);
+        this.soulAlpha = Math.max(0, 1 - (this.deathTimer - 1.5) / 1.5);
+      } else {
+        // Phase 3: done
+        this.visible = false;
+        this.dying = false;
+        if (this.deathCallback) {
+          const cb = this.deathCallback;
+          this.deathCallback = null;
+          cb();
+        }
+      }
+      return; // Skip normal update while dying
+    }
+
     super.update(dt);
 
     // Look left/right while typing at desk

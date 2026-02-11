@@ -53,6 +53,9 @@ class EventClassifier {
         const toolResult = StreamParser.getToolResult(event);
         if (toolResult) {
           this.activeToolUses.delete(toolResult.id);
+          if (toolResult.is_error) {
+            this._handleError();
+          }
         }
         break;
       }
@@ -85,6 +88,21 @@ class EventClassifier {
       if (currentState !== STATES.CODING) {
         this.stateMachine.transition(STATES.CODING);
       }
+    }
+  }
+
+  _handleError() {
+    // Trigger error animation on a random visible character
+    const chars = [];
+    if (this.stateMachine.charMgr.leader.visible) {
+      chars.push(this.stateMachine.charMgr.leader);
+    }
+    for (const w of this.stateMachine.charMgr.workers) {
+      if (w.visible) chars.push(w);
+    }
+    if (chars.length > 0) {
+      const target = chars[Math.floor(Math.random() * chars.length)];
+      target.triggerError();
     }
   }
 
