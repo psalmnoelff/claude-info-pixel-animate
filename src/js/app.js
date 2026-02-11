@@ -7,7 +7,8 @@
   const renderer = new CanvasRenderer(canvas);
   const whiteboard = new Whiteboard(renderer);
   const desks = CONFIG.DESKS.map((d, i) => new Desk(renderer, d.x, d.y, i));
-  const leaderDesk = new Desk(renderer, CONFIG.LEADER_DESK_POS.x, CONFIG.LEADER_DESK_POS.y, -1);
+  const leaderDeskL = new Desk(renderer, CONFIG.LEADER_DESK_POS.x, CONFIG.LEADER_DESK_POS.y, -1);
+  const leaderDeskR = new Desk(renderer, CONFIG.LEADER_DESK_POS.x + 1, CONFIG.LEADER_DESK_POS.y, -2);
   const door = new Door(renderer);
   const particles = new ParticleSystem();
   const appState = new AppState();
@@ -78,9 +79,12 @@
       desk.occupied = charMgr.deskOccupancy[desk.index];
       desk.update(dt);
     }
-    // Update leader desk glow
-    leaderDesk.occupied = charMgr.leader.state === 'typing' || charMgr.leader.state === 'sitting';
-    leaderDesk.update(dt);
+    // Update leader desk glow (both tiles)
+    const leaderAtDesk = charMgr.leader.state === 'typing' || charMgr.leader.state === 'sitting';
+    leaderDeskL.occupied = leaderAtDesk;
+    leaderDeskR.occupied = leaderAtDesk;
+    leaderDeskL.update(dt);
+    leaderDeskR.update(dt);
   }
 
   // Draw function (called every frame)
@@ -101,7 +105,8 @@
     for (const desk of desks) {
       desk.draw();
     }
-    leaderDesk.draw();
+    leaderDeskL.draw();
+    leaderDeskR.draw();
 
     // Characters (sorted by Y)
     charMgr.draw(renderer);
