@@ -4,7 +4,9 @@ class ClaudeConnector {
     this.parser = streamParser;
     this.classifier = eventClassifier;
     this.connected = false;
+    this.watching = false;
     this.removeListeners = [];
+    this.onWatchStatusChange = null; // callback(status)
   }
 
   // Start listening for Claude events via preload bridge
@@ -40,8 +42,45 @@ class ClaudeConnector {
     });
     this.removeListeners.push(removeError);
 
+    // Listen for watch status changes
+    const removeWatchStatus = window.claude.onWatchStatus((status) => {
+      this.watching = status.watching;
+      console.log('[claude] watch status:', status);
+      if (this.onWatchStatusChange) {
+        this.onWatchStatusChange(status);
+      }
+    });
+    this.removeListeners.push(removeWatchStatus);
+
     this.connected = true;
     return true;
+  }
+
+  // Start watching existing Claude Code session logs
+  async watch() {
+    if (!window.claude) return false;
+
+    try {
+      const result = await window.claude.watch();
+      this.watching = result.ok;
+      this.connected = result.ok;
+      return result.ok;
+    } catch (e) {
+      console.error('Failed to start watching:', e);
+      return false;
+    }
+  }
+
+  // Stop watching session logs
+  async unwatch() {
+    if (!window.claude) return;
+
+    try {
+      await window.claude.unwatch();
+    } catch (e) {
+      console.error('Failed to stop watching:', e);
+    }
+    this.watching = false;
   }
 
   // Launch Claude with a prompt
@@ -77,5 +116,6 @@ class ClaudeConnector {
     }
     this.removeListeners = [];
     this.connected = false;
+    this.watching = false;
   }
 }

@@ -10,6 +10,8 @@ contextBridge.exposeInMainWorld('claude', {
     ipcRenderer.invoke('claude:start', { prompt, workingDir }),
   stop: () => ipcRenderer.invoke('claude:stop'),
   status: () => ipcRenderer.invoke('claude:status'),
+  watch: () => ipcRenderer.invoke('claude:watch'),
+  unwatch: () => ipcRenderer.invoke('claude:unwatch'),
   onEvent: (callback) => {
     const handler = (_event, data) => callback(data);
     ipcRenderer.on('claude:event', handler);
@@ -29,5 +31,10 @@ contextBridge.exposeInMainWorld('claude', {
     const handler = (_event, msg) => callback(msg);
     ipcRenderer.on('claude:error', handler);
     return () => ipcRenderer.removeListener('claude:error', handler);
+  },
+  onWatchStatus: (callback) => {
+    const handler = (_event, data) => callback(data);
+    ipcRenderer.on('claude:watch-status', handler);
+    return () => ipcRenderer.removeListener('claude:watch-status', handler);
   }
 });

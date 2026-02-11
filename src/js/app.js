@@ -41,6 +41,9 @@
   // Connect to Claude IPC if available
   connector.connect();
 
+  // Auto-start listening for active Claude Code sessions
+  connector.watch();
+
   // Update function (called at fixed timestep)
   function update(dt) {
     // Demo mode auto-cycling
