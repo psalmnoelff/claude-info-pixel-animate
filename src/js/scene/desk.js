@@ -38,7 +38,7 @@ class Desk {
     }
 
     // Chair push-in/pull-back animation
-    this.chairTarget = this.occupied ? 3 : 0;
+    this.chairTarget = this.occupied ? 1 : 0;
     const chairSpeed = 40;
     if (Math.abs(this.chairOffset - this.chairTarget) > 0.1) {
       if (this.chairOffset < this.chairTarget) {
