@@ -72,11 +72,8 @@ class EventClassifier {
             this._handleError();
           }
         } else {
-          // User sent a new message - Claude will start thinking
-          const currentState = this.stateMachine.getState();
-          if (currentState === STATES.IDLE || currentState === STATES.DONE) {
-            this.stateMachine.transition(STATES.THINKING);
-          }
+          // User sent a new message - new turn starts, Claude will think
+          this.stateMachine.transition(STATES.THINKING);
         }
         break;
       }
