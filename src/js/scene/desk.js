@@ -38,7 +38,7 @@ class Desk {
     }
 
     // Chair push-in/pull-back animation
-    this.chairTarget = this.occupied ? 5 : 0;
+    this.chairTarget = this.occupied ? 3 : 0;
     const chairSpeed = 40;
     if (Math.abs(this.chairOffset - this.chairTarget) > 0.1) {
       if (this.chairOffset < this.chairTarget) {
@@ -154,7 +154,7 @@ class Desk {
     if (this.wide) {
       px = this.tileX * T + T / 2; // center on 2-tile wide desk
     }
-    const py = (this.tileY + 1) * T + Math.round(this.chairOffset);
+    const py = (this.tileY + 1) * T - 3 + Math.round(this.chairOffset);
 
     const chairSprite = SpriteRenderer.get('chair');
     if (chairSprite) {
