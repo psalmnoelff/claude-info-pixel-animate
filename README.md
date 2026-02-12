@@ -22,6 +22,7 @@ ClOffice Pixel is an Electron desktop app that turns Claude Code's real-time act
 - **Always-on-top mode** -- pin the window above other apps to keep an eye on your session while you work.
 - **Demo mode** -- cycle through all visual states automatically to preview every animation.
 - **Settings overlay** -- toggle listening, launch sessions, enable always-on-top, and start demos from a single screen.
+- **Custom pixel art icon** -- the app icon is the leader character's face, generated from sprite data via `node scripts/generate-icon.js`.
 - **No external assets** -- all 32x32 sprites are defined as JavaScript arrays using a 16-color palette. The entire app is pure vanilla JS with no frameworks.
 
 ---
