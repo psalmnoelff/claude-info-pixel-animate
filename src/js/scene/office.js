@@ -10,6 +10,10 @@ class Office {
     const r = this.renderer;
     const T = CONFIG.TILE;
 
+    // Cache time values for this frame
+    this._dayProgress = this._getDayProgress();
+    this._time = Date.now() / 1000;
+
     for (let row = 0; row < CONFIG.ROWS; row++) {
       for (let col = 0; col < CONFIG.COLS; col++) {
         if (row < 3) {
@@ -67,6 +71,9 @@ class Office {
   }
 
   _drawWindow(r, x, y, w, h) {
+    const dp = this._dayProgress;
+    const px = x + 2, py = y + 2, pw = w - 4, ph = h - 4;
+
     // Outer frame (2px grey border)
     r.fillRect(x, y, w, h, CONFIG.COL.LIGHT_GREY);
 
@@ -76,25 +83,54 @@ class Office {
     r.pixel(x, y + h - 1, CONFIG.COL.DARK_BLUE);
     r.pixel(x + w - 1, y + h - 1, CONFIG.COL.DARK_BLUE);
 
-    // Inner pane (sky blue)
-    r.fillRect(x + 2, y + 2, w - 4, h - 4, CONFIG.COL.BLUE);
+    // --- Dynamic sky ---
+
+    // Base: black sky
+    r.fillRect(px, py, pw, ph, CONFIG.COL.BLACK);
+
+    // Night layer (dark blue)
+    if (dp < 0.6) {
+      r.fillRectAlpha(px, py, pw, ph, '#1d2b53', Math.min(1, (0.6 - dp) * 2.5));
+    }
+
+    // Day layer (blue sky, fades in)
+    if (dp > 0.3) {
+      r.fillRectAlpha(px, py, pw, ph, '#29adff', Math.min(1, (dp - 0.3) * 1.8));
+    }
+
+    // Sunrise/sunset glow (orange at bottom half, peaks during transition)
+    const glowIntensity = dp * (1 - dp) * 4;
+    if (glowIntensity > 0.05) {
+      const glowH = Math.ceil(ph * 0.6);
+      r.fillRectAlpha(px, py + ph - glowH, pw, glowH, '#ffa300', glowIntensity * 0.6);
+      const pinkH = Math.ceil(ph * 0.35);
+      r.fillRectAlpha(px, py + ph - pinkH, pw, pinkH, '#ff77a8', glowIntensity * 0.35);
+    }
+
+    // Stars (visible during night)
+    if (dp < 0.4) {
+      this._drawStars(r, px, py, pw, ph, 1 - dp / 0.4);
+    }
+
+    // Clouds (visible during day)
+    if (dp > 0.6) {
+      this._drawClouds(r, px, py, pw, ph);
+    }
 
     // Cross divider
-    r.fillRect(x + Math.floor(w / 2), y + 2, 1, h - 4, CONFIG.COL.LIGHT_GREY);
-    r.fillRect(x + 2, y + Math.floor(h / 2), w - 4, 1, CONFIG.COL.LIGHT_GREY);
+    r.fillRect(x + Math.floor(w / 2), py, 1, ph, CONFIG.COL.LIGHT_GREY);
+    r.fillRect(px, y + Math.floor(h / 2), pw, 1, CONFIG.COL.LIGHT_GREY);
 
-    // Glass highlights (top-left pane)
-    r.fillRect(x + 4, y + 4, 3, 1, CONFIG.COL.WHITE);
-    r.fillRect(x + 4, y + 5, 1, 2, CONFIG.COL.WHITE);
+    // Glass highlights (only visible during daytime)
+    if (dp > 0.5) {
+      const ha = Math.min(1, (dp - 0.5) * 2);
+      r.fillRectAlpha(x + 4, y + 4, 3, 1, '#fff1e8', ha * 0.7);
+      r.fillRectAlpha(x + 4, y + 5, 1, 2, '#fff1e8', ha * 0.5);
+    }
 
-    // Bottom-right reflection
-    const rx = x + Math.floor(w / 2) + 2;
-    const ry = y + Math.floor(h / 2) + 2;
-    r.fillRect(rx + 3, ry + 4, 2, 1, CONFIG.COL.WHITE);
-
-    // Curtain hints (darker strips at left and right edges of glass)
-    r.fillRect(x + 2, y + 2, 1, h - 4, CONFIG.COL.INDIGO);
-    r.fillRect(x + w - 3, y + 2, 1, h - 4, CONFIG.COL.INDIGO);
+    // Curtain hints (darker strips at edges)
+    r.fillRect(px, py, 1, ph, CONFIG.COL.INDIGO);
+    r.fillRect(x + w - 3, py, 1, ph, CONFIG.COL.INDIGO);
 
     // Window sill (brown strip at bottom)
     r.fillRect(x - 1, y + h, w + 2, 2, CONFIG.COL.BROWN);
@@ -141,6 +177,57 @@ class Office {
     // Right bud
     r.pixel(x + 8, y + 2, flowerColor);
     r.pixel(x + 9, y + 3, flowerColor);
+  }
+
+  // Day progress: 0 = full night, 1 = full day
+  // Dawn ~5:30-7:00, Dusk ~19:00-20:30
+  _getDayProgress() {
+    const now = new Date();
+    const h = now.getHours() + now.getMinutes() / 60;
+
+    if (h >= 5.5 && h < 7) return (h - 5.5) / 1.5;   // dawn
+    if (h >= 7 && h < 19) return 1;                     // day
+    if (h >= 19 && h < 20.5) return 1 - (h - 19) / 1.5; // dusk
+    return 0;                                            // night
+  }
+
+  _drawStars(r, px, py, pw, ph, alpha) {
+    if (alpha < 0.05) return;
+    const t = this._time;
+
+    for (let i = 0; i < 8; i++) {
+      // Deterministic positions (different per window via px seed)
+      const sx = px + ((px * 7 + i * 31 + 5) % (pw - 2)) + 1;
+      const sy = py + ((px * 13 + i * 17 + 3) % (ph - 2)) + 1;
+
+      // Twinkle
+      const twinkle = Math.sin(t * (1.5 + i * 0.4) + i * 2.7 + px * 0.1);
+      if (twinkle > -0.3) {
+        r.pixel(sx, sy, twinkle > 0.4 ? CONFIG.COL.WHITE : CONFIG.COL.LIGHT_GREY);
+      }
+    }
+  }
+
+  _drawClouds(r, px, py, pw, ph) {
+    const t = this._time;
+
+    for (let i = 0; i < 2; i++) {
+      const speed = 1.5 + i * 1.0;
+      const yOff = 2 + i * 6;
+
+      // Cloud X wraps within pane
+      const rawX = ((t * speed + i * 30 + px * 0.5) % (pw + 4)) - 2;
+      const cx = Math.floor(rawX);
+      const cy = py + yOff;
+
+      // Small 3-pixel cloud wisp
+      for (let dx = 0; dx < 3; dx++) {
+        const wx = px + ((cx + dx + pw) % pw);
+        if (wx >= px && wx < px + pw) {
+          r.pixel(wx, cy, dx === 2 ? CONFIG.COL.LIGHT_GREY : CONFIG.COL.WHITE);
+        }
+      }
+    }
   }
 
   _drawClock(r, cx, cy) {
