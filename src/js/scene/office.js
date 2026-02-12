@@ -51,6 +51,9 @@ class Office {
     // Window tint (orange glow on glass)
     if (this.fireStatus) this.fireStatus.drawWindowTint();
 
+    // Wall clock above the door
+    this._drawClock(r, 17 * T + 12, 7);
+
     // Potted plants on the baseboard (wall level)
     this._drawPlant(r, 4 * T + 4, 3 * T - 13, CONFIG.COL.RED);     // Left of whiteboard
     this._drawPlant(r, 12 * T + 4, 3 * T - 13, CONFIG.COL.YELLOW);  // Right of whiteboard
@@ -138,6 +141,72 @@ class Office {
     // Right bud
     r.pixel(x + 8, y + 2, flowerColor);
     r.pixel(x + 9, y + 3, flowerColor);
+  }
+
+  _drawClock(r, cx, cy) {
+    const now = new Date();
+    const hours = now.getHours() % 12;
+    const minutes = now.getMinutes();
+    const seconds = now.getSeconds();
+
+    // Brown circular frame (radius 5)
+    for (let dy = -5; dy <= 5; dy++) {
+      for (let dx = -5; dx <= 5; dx++) {
+        if (dx * dx + dy * dy <= 25) {
+          r.pixel(cx + dx, cy + dy, CONFIG.COL.BROWN);
+        }
+      }
+    }
+
+    // White face (radius 4)
+    for (let dy = -4; dy <= 4; dy++) {
+      for (let dx = -4; dx <= 4; dx++) {
+        if (dx * dx + dy * dy <= 16) {
+          r.pixel(cx + dx, cy + dy, CONFIG.COL.WHITE);
+        }
+      }
+    }
+
+    // Hour markers
+    r.pixel(cx, cy - 3, CONFIG.COL.DARK_GREY);  // 12
+    r.pixel(cx + 3, cy, CONFIG.COL.DARK_GREY);  // 3
+    r.pixel(cx, cy + 3, CONFIG.COL.DARK_GREY);  // 6
+    r.pixel(cx - 3, cy, CONFIG.COL.DARK_GREY);  // 9
+
+    // Hour hand (short, brown)
+    const hAngle = (hours + minutes / 60) / 12 * 2 * Math.PI;
+    const hx = Math.round(2 * Math.sin(hAngle));
+    const hy = Math.round(-2 * Math.cos(hAngle));
+    this._drawClockHand(r, cx, cy, cx + hx, cy + hy, CONFIG.COL.BROWN);
+
+    // Minute hand (longer, dark grey)
+    const mAngle = minutes / 60 * 2 * Math.PI;
+    const mx = Math.round(3 * Math.sin(mAngle));
+    const my = Math.round(-3 * Math.cos(mAngle));
+    this._drawClockHand(r, cx, cy, cx + mx, cy + my, CONFIG.COL.DARK_GREY);
+
+    // Second hand (longest, red, thin)
+    const sAngle = seconds / 60 * 2 * Math.PI;
+    const sx = Math.round(3.5 * Math.sin(sAngle));
+    const sy = Math.round(-3.5 * Math.cos(sAngle));
+    this._drawClockHand(r, cx, cy, cx + sx, cy + sy, CONFIG.COL.RED);
+
+    // Center pin
+    r.pixel(cx, cy, CONFIG.COL.BLACK);
+
+    // Small mounting bracket below clock
+    r.fillRect(cx - 1, cy + 5, 3, 2, CONFIG.COL.DARK_GREY);
+  }
+
+  _drawClockHand(r, x0, y0, x1, y1, color) {
+    const dx = Math.abs(x1 - x0);
+    const dy = Math.abs(y1 - y0);
+    const steps = Math.max(dx, dy);
+    if (steps === 0) { r.pixel(x0, y0, color); return; }
+    for (let i = 0; i <= steps; i++) {
+      const t = i / steps;
+      r.pixel(Math.round(x0 + (x1 - x0) * t), Math.round(y0 + (y1 - y0) * t), color);
+    }
   }
 
   // Draw dark overlay for lights-out effect (call after all scene drawing, before HUD)
