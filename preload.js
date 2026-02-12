@@ -47,5 +47,11 @@ contextBridge.exposeInMainWorld('claude', {
     const handler = (_event, data) => callback(data);
     ipcRenderer.on('claude:sessions-list', handler);
     return () => ipcRenderer.removeListener('claude:sessions-list', handler);
+  },
+  checkStatus: () => ipcRenderer.invoke('claude:check-status'),
+  onStatusRSS: (callback) => {
+    const handler = (_event, data) => callback(data);
+    ipcRenderer.on('claude:status-rss', handler);
+    return () => ipcRenderer.removeListener('claude:status-rss', handler);
   }
 });

@@ -2,6 +2,7 @@
 (function () {
   const canvas = document.getElementById('game-canvas');
   const settingsOverlay = document.getElementById('settings-overlay');
+  const statusPopupOverlay = document.getElementById('status-popup-overlay');
 
   // Core systems
   const renderer = new CanvasRenderer(canvas);
@@ -13,7 +14,9 @@
   const appState = new AppState();
   const charMgr = new CharacterManager();
   const stateMachine = new StateMachine(charMgr, whiteboard, door, particles, appState);
-  const office = new Office(renderer, stateMachine);
+  const fireStatus = new FireStatus(renderer);
+  const office = new Office(renderer, stateMachine, fireStatus);
+  const statusPopup = new StatusPopup(statusPopupOverlay);
   const hud = new HUD(renderer, appState);
 
   // Claude integration
@@ -40,6 +43,16 @@
 
   // Connect to Claude IPC if available
   connector.connect();
+
+  // Wire RSS status updates
+  if (window.claude && window.claude.onStatusRSS) {
+    window.claude.onStatusRSS((data) => {
+      fireStatus.updateStatus(data);
+      if (statusPopup.visible) {
+        statusPopup.updateIncidents(data.hasActiveIncident ? data.activeIncidents : data.recentIncidents);
+      }
+    });
+  }
 
   // Wire usage updates from session log scanning to appState
   connector.onUsageUpdate = (data) => {
@@ -72,6 +85,7 @@
     stateMachine.update(dt);
     charMgr.update(dt, whiteboard);
     particles.update(dt);
+    fireStatus.update(dt);
 
     // Update desk glow for worker desks (only when worker is actually seated)
     for (const desk of desks) {
@@ -180,17 +194,19 @@
 
   // Keyboard handling
   document.addEventListener('keydown', (e) => {
+    // ESC: close status popup first, then toggle settings
+    if (e.key === 'Escape') {
+      if (statusPopup.visible) { statusPopup.hide(); return; }
+      settings.toggle();
+      return;
+    }
+
     if (settings.visible) return;
 
     // Test keys (0-9)
     if (e.key >= '0' && e.key <= '9') {
       demoMode = false;
       stateMachine.handleTestKey(e.key);
-    }
-
-    // ESC = settings
-    if (e.key === 'Escape') {
-      settings.toggle();
     }
 
     // T = toggle always on top
@@ -229,6 +245,26 @@
       }
     }
 
+    // F = toggle fire test
+    if (e.key === 'f' || e.key === 'F') {
+      if (fireStatus.targetIntensity > 0) {
+        fireStatus.updateStatus({ hasActiveIncident: false, activeIncidents: [], recentIncidents: [] });
+        hud.flashMessage('FIRE: OFF');
+      } else {
+        fireStatus.updateStatus({
+          hasActiveIncident: true,
+          activeIncidents: [{
+            title: 'Test: Elevated API Errors',
+            description: 'This is a test incident to preview the fire effect.\nClaude API is experiencing elevated error rates.',
+            link: 'https://status.claude.com',
+            pubDate: new Date().toUTCString(),
+          }],
+          recentIncidents: [],
+        });
+        hud.flashMessage('FIRE: ON');
+      }
+    }
+
     // S = cycle sessions
     if (e.key === 's' || e.key === 'S') {
       if (appState.availableSessions && appState.availableSessions.length > 1) {
@@ -254,6 +290,13 @@
     const screenY = e.clientY - rect.top;
     const bufX = (screenX - renderer.offsetX) / renderer.scale;
     const bufY = (screenY - renderer.offsetY) / renderer.scale;
+
+    // Check window clicks for fire status popup
+    if (fireStatus.handleClick(bufX, bufY)) {
+      const incidents = fireStatus.hasActiveIncident ? fireStatus.activeIncidents : fireStatus.recentIncidents;
+      if (incidents.length > 0) statusPopup.show(incidents);
+      return;
+    }
 
     hud.handleClick(bufX, bufY);
   });
