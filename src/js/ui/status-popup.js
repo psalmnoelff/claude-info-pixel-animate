@@ -44,7 +44,7 @@ class StatusPopup {
               ${this._escapeHtml(inc.pubDate || '')}
             </div>
             <div style="color: #c2c3c7; font-size: 11px; white-space: pre-wrap; line-height: 1.4;">
-              ${this._escapeHtml(inc.description || 'No details.')}
+              ${this._sanitizeHtml(inc.description || 'No details.')}
             </div>
             ${inc.link ? `<a href="#" onclick="event.preventDefault();" style="color: #29adff; font-size: 10px; text-decoration: underline; cursor: default; pointer-events: none;">
               ${this._escapeHtml(inc.link)}
@@ -90,5 +90,15 @@ class StatusPopup {
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#039;');
+  }
+
+  // Allow safe HTML tags from the trusted RSS feed, strip dangerous ones
+  _sanitizeHtml(str) {
+    if (!str) return '';
+    return str
+      .replace(/<script[\s\S]*?<\/script>/gi, '')
+      .replace(/<iframe[\s\S]*?<\/iframe>/gi, '')
+      .replace(/on\w+="[^"]*"/gi, '')
+      .replace(/on\w+='[^']*'/gi, '');
   }
 }
