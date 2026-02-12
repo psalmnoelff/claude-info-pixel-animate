@@ -2,7 +2,8 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('appWindow', {
   toggleAlwaysOnTop: () => ipcRenderer.invoke('window:toggle-always-on-top'),
-  isAlwaysOnTop: () => ipcRenderer.invoke('window:get-always-on-top')
+  isAlwaysOnTop: () => ipcRenderer.invoke('window:get-always-on-top'),
+  openExternal: (url) => ipcRenderer.invoke('shell:open-external', url)
 });
 
 contextBridge.exposeInMainWorld('claude', {

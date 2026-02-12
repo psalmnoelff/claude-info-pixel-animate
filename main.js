@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
@@ -20,8 +20,8 @@ let lastKnownIncidents = [];
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 1024,
-    height: 768,
+    width: 640,
+    height: 480,
     minWidth: 512,
     minHeight: 384,
     backgroundColor: '#1d2b53',
@@ -666,6 +666,10 @@ ipcMain.handle('window:toggle-always-on-top', () => {
 
 ipcMain.handle('window:get-always-on-top', () => {
   return mainWindow.isAlwaysOnTop();
+});
+
+ipcMain.handle('shell:open-external', (_event, url) => {
+  return shell.openExternal(url);
 });
 
 app.commandLine.appendSwitch('disable-gpu-cache');
