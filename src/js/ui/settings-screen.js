@@ -116,6 +116,7 @@ class SettingsScreen {
               <button class="si-test" data-test="exit" style="background:#5f574f;color:#fff1e8;border:none;padding:4px 8px;font-family:monospace;font-size:11px;cursor:pointer;">EXIT WORKERS</button>
               <button class="si-test" data-test="janitor" style="background:#5f574f;color:#fff1e8;border:none;padding:4px 8px;font-family:monospace;font-size:11px;cursor:pointer;">JANITOR</button>
               <button class="si-test" data-test="error" style="background:#5f574f;color:#fff1e8;border:none;padding:4px 8px;font-family:monospace;font-size:11px;cursor:pointer;">ERROR</button>
+              <button class="si-test" data-test="commit" style="background:#5f574f;color:#fff1e8;border:none;padding:4px 8px;font-family:monospace;font-size:11px;cursor:pointer;">COMMIT</button>
             </div>
           </div>
         </details>
