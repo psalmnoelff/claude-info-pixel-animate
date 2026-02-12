@@ -4,10 +4,10 @@ class CanvasRenderer {
     this.canvas = canvasElement;
     this.ctx = this.canvas.getContext('2d');
 
-    // Internal buffer at native resolution
+    // Internal buffer at scaled resolution
     this.buffer = document.createElement('canvas');
-    this.buffer.width = CONFIG.WIDTH;
-    this.buffer.height = CONFIG.HEIGHT;
+    this.buffer.width = CONFIG.BUFFER_WIDTH;
+    this.buffer.height = CONFIG.BUFFER_HEIGHT;
     this.bufCtx = this.buffer.getContext('2d');
     this.bufCtx.imageSmoothingEnabled = false;
 
@@ -50,29 +50,83 @@ class CanvasRenderer {
   clear(colorIndex) {
     const color = colorIndex !== undefined ? CONFIG.PALETTE[colorIndex] : '#000000';
     this.bufCtx.fillStyle = color;
-    this.bufCtx.fillRect(0, 0, CONFIG.WIDTH, CONFIG.HEIGHT);
+    this.bufCtx.fillRect(0, 0, CONFIG.BUFFER_WIDTH, CONFIG.BUFFER_HEIGHT);
   }
 
   // Draw a filled rectangle on the buffer
   fillRect(x, y, w, h, colorIndex) {
+    const S = CONFIG.PIXEL_SCALE;
     this.bufCtx.fillStyle = CONFIG.PALETTE[colorIndex];
-    this.bufCtx.fillRect(Math.floor(x), Math.floor(y), w, h);
+    this.bufCtx.fillRect(Math.floor(x) * S, Math.floor(y) * S, w * S, h * S);
   }
 
   // Draw a pixel on the buffer
   pixel(x, y, colorIndex) {
+    const S = CONFIG.PIXEL_SCALE;
     this.bufCtx.fillStyle = CONFIG.PALETTE[colorIndex];
-    this.bufCtx.fillRect(Math.floor(x), Math.floor(y), 1, 1);
+    this.bufCtx.fillRect(Math.floor(x) * S, Math.floor(y) * S, S, S);
   }
 
   // Draw an image/canvas onto the buffer
   drawImage(img, x, y) {
-    this.bufCtx.drawImage(img, Math.floor(x), Math.floor(y));
+    const S = CONFIG.PIXEL_SCALE;
+    this.bufCtx.drawImage(img, Math.floor(x) * S, Math.floor(y) * S);
   }
 
   // Draw a portion of an image onto the buffer
   drawImageRegion(img, sx, sy, sw, sh, dx, dy) {
-    this.bufCtx.drawImage(img, sx, sy, sw, sh, Math.floor(dx), Math.floor(dy), sw, sh);
+    const S = CONFIG.PIXEL_SCALE;
+    this.bufCtx.drawImage(img, sx * S, sy * S, sw * S, sh * S, Math.floor(dx) * S, Math.floor(dy) * S, sw * S, sh * S);
+  }
+
+  // Draw sprite flipped horizontally at logical position
+  drawImageFlipped(img, x, y) {
+    const S = CONFIG.PIXEL_SCALE;
+    const size = CONFIG.SPRITE_SIZE;
+    this.bufCtx.save();
+    this.bufCtx.translate(Math.floor(x) * S + size, Math.floor(y) * S);
+    this.bufCtx.scale(-1, 1);
+    this.bufCtx.drawImage(img, 0, 0);
+    this.bufCtx.restore();
+  }
+
+  // Draw sprite with rotation and alpha at logical center point
+  drawImageTransformed(img, cx, cy, rotation, alpha, halfW, halfH) {
+    const S = CONFIG.PIXEL_SCALE;
+    this.bufCtx.save();
+    if (alpha !== undefined && alpha < 1) this.bufCtx.globalAlpha = alpha;
+    this.bufCtx.translate(Math.floor(cx) * S, Math.floor(cy) * S);
+    if (rotation) this.bufCtx.rotate(rotation);
+    this.bufCtx.drawImage(img, -halfW * S, -halfH * S);
+    this.bufCtx.restore();
+  }
+
+  // Fill rect with CSS color and alpha at logical coords
+  fillRectAlpha(x, y, w, h, cssColor, alpha) {
+    const S = CONFIG.PIXEL_SCALE;
+    this.bufCtx.save();
+    this.bufCtx.globalAlpha = alpha;
+    this.bufCtx.fillStyle = cssColor;
+    this.bufCtx.fillRect(Math.floor(x) * S, Math.floor(y) * S, w * S, h * S);
+    this.bufCtx.restore();
+  }
+
+  // Set global alpha (call resetAlpha when done)
+  setAlpha(alpha) {
+    this.bufCtx.save();
+    this.bufCtx.globalAlpha = alpha;
+  }
+
+  // Reset alpha (restores saved state from setAlpha)
+  resetAlpha() {
+    this.bufCtx.restore();
+  }
+
+  // Draw a pixel with a CSS color string (no palette lookup)
+  pixelCSS(x, y, cssColor) {
+    const S = CONFIG.PIXEL_SCALE;
+    this.bufCtx.fillStyle = cssColor;
+    this.bufCtx.fillRect(Math.floor(x) * S, Math.floor(y) * S, S, S);
   }
 
   // Get the buffer context for direct drawing
@@ -96,7 +150,7 @@ class CanvasRenderer {
     // Draw buffer scaled up
     this.ctx.drawImage(
       this.buffer,
-      0, 0, CONFIG.WIDTH, CONFIG.HEIGHT,
+      0, 0, CONFIG.BUFFER_WIDTH, CONFIG.BUFFER_HEIGHT,
       this.offsetX + sx, this.offsetY + sy,
       CONFIG.WIDTH * this.scale, CONFIG.HEIGHT * this.scale
     );

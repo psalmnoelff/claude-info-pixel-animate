@@ -123,15 +123,9 @@ class FireStatus {
   drawWindowTint() {
     if (this.fireIntensity <= 0.01) return;
 
-    const ctx = this.renderer.getBufferContext();
-    ctx.save();
-    ctx.globalAlpha = this.fireIntensity * 0.25;
-    ctx.fillStyle = '#ffa300'; // orange
-
     for (const win of this.windows) {
-      ctx.fillRect(win.x, win.y, win.w, win.h);
+      this.renderer.fillRectAlpha(win.x, win.y, win.w, win.h, '#ffa300', this.fireIntensity * 0.25);
     }
-    ctx.restore();
   }
 
   // Hit-test both window frame regions. Returns true if clicked during incident.

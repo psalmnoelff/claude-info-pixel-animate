@@ -6,6 +6,10 @@ const CONFIG = {
   TILE: 16,
   COLS: 20,  // 320/16
   ROWS: 13,  // 208/16 = 13
+  PIXEL_SCALE: 2,
+  BUFFER_WIDTH: 640,   // WIDTH * PIXEL_SCALE
+  BUFFER_HEIGHT: 416,  // HEIGHT * PIXEL_SCALE
+  SPRITE_SIZE: 32,     // TILE * PIXEL_SCALE
 
   // PICO-8 inspired palette
   PALETTE: [

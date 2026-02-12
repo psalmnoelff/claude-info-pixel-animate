@@ -8,18 +8,23 @@ class SpriteRenderer {
     const data = SPRITES[name];
     if (!data) return null;
 
+    const S = CONFIG.PIXEL_SCALE;
     const canvas = document.createElement('canvas');
-    canvas.width = 16;
-    canvas.height = 16;
+    canvas.width = CONFIG.SPRITE_SIZE;
+    canvas.height = CONFIG.SPRITE_SIZE;
     const ctx = canvas.getContext('2d');
 
-    for (let i = 0; i < 256; i++) {
+    const isNative32 = data.length === 1024;
+    const srcW = isNative32 ? 32 : 16;
+    const scale = isNative32 ? 1 : S;
+
+    for (let i = 0; i < data.length; i++) {
       const colorIdx = data[i];
       if (colorIdx < 0) continue;
-      const x = i % 16;
-      const y = Math.floor(i / 16);
+      const x = (i % srcW) * scale;
+      const y = Math.floor(i / srcW) * scale;
       ctx.fillStyle = CONFIG.PALETTE[colorIdx];
-      ctx.fillRect(x, y, 1, 1);
+      ctx.fillRect(x, y, scale, scale);
     }
 
     SpriteRenderer.cache[name] = canvas;
@@ -41,19 +46,24 @@ class SpriteRenderer {
 
     const tintRGB = SpriteRenderer._hexToRGB(CONFIG.PALETTE[tintColor]);
 
+    const S = CONFIG.PIXEL_SCALE;
     const canvas = document.createElement('canvas');
-    canvas.width = 16;
-    canvas.height = 16;
+    canvas.width = CONFIG.SPRITE_SIZE;
+    canvas.height = CONFIG.SPRITE_SIZE;
     const ctx = canvas.getContext('2d');
 
     // Colors to tint (shirt colors - light grey)
     const tintTargets = [CONFIG.COL.LIGHT_GREY, CONFIG.COL.WHITE];
 
-    for (let i = 0; i < 256; i++) {
+    const isNative32 = data.length === 1024;
+    const srcW = isNative32 ? 32 : 16;
+    const scale = isNative32 ? 1 : S;
+
+    for (let i = 0; i < data.length; i++) {
       const colorIdx = data[i];
       if (colorIdx < 0) continue;
-      const x = i % 16;
-      const y = Math.floor(i / 16);
+      const x = (i % srcW) * scale;
+      const y = Math.floor(i / srcW) * scale;
 
       if (tintTargets.includes(colorIdx)) {
         // Blend with tint color
@@ -65,7 +75,7 @@ class SpriteRenderer {
       } else {
         ctx.fillStyle = CONFIG.PALETTE[colorIdx];
       }
-      ctx.fillRect(x, y, 1, 1);
+      ctx.fillRect(x, y, scale, scale);
     }
 
     SpriteRenderer.cache[key] = canvas;

@@ -179,15 +179,9 @@ class Character {
 
     if (sprite) {
       if (!this.facingRight) {
-        // Draw flipped horizontally
-        const bufCtx = renderer.getBufferContext();
-        bufCtx.save();
-        bufCtx.translate(Math.floor(this.x) + 16, Math.floor(this.y));
-        bufCtx.scale(-1, 1);
-        bufCtx.drawImage(sprite, 0, 0);
-        bufCtx.restore();
+        renderer.drawImageFlipped(sprite, this.x, this.y);
       } else {
-        renderer.drawImage(sprite, Math.floor(this.x), Math.floor(this.y));
+        renderer.drawImage(sprite, this.x, this.y);
       }
     }
 

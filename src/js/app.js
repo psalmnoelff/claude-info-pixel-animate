@@ -129,7 +129,7 @@
     const allChars = [charMgr.leader, ...charMgr.workers].filter(c => c.visible);
     for (const c of allChars) {
       drawList.push({
-        sortY: c.y + 16,
+        sortY: c.y + CONFIG.TILE,
         isChar: true,
         draw: () => c.draw(renderer),
       });
@@ -139,7 +139,7 @@
     if (stateMachine.janitor && stateMachine.janitor.visible) {
       const j = stateMachine.janitor;
       drawList.push({
-        sortY: j.y + 16,
+        sortY: j.y + CONFIG.TILE,
         isChar: true,
         draw: () => j.draw(renderer),
       });
@@ -168,12 +168,7 @@
     if (appState.screenFlashTimer > 0) {
       appState.screenFlashTimer -= 1 / 60;
       const alpha = Math.min(1, appState.screenFlashTimer / 0.1) * 0.8;
-      const bufCtx = renderer.getBufferContext();
-      bufCtx.save();
-      bufCtx.globalAlpha = alpha;
-      bufCtx.fillStyle = '#ffffff';
-      bufCtx.fillRect(0, 0, CONFIG.WIDTH, CONFIG.HEIGHT);
-      bufCtx.restore();
+      renderer.fillRectAlpha(0, 0, CONFIG.WIDTH, CONFIG.HEIGHT, '#ffffff', alpha);
     }
 
     // Screen shake

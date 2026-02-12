@@ -67,9 +67,6 @@ class PixelFont {
     const cy = Math.floor(y);
     const color = CONFIG.PALETTE[colorIndex];
 
-    const bufCtx = renderer.getBufferContext();
-    bufCtx.fillStyle = color;
-
     for (let c = 0; c < str.length; c++) {
       const glyph = PixelFont.GLYPHS[str[c]];
       if (glyph) {
@@ -77,7 +74,7 @@ class PixelFont {
           if (glyph[i]) {
             const gx = i % PixelFont.CHAR_W;
             const gy = Math.floor(i / PixelFont.CHAR_W);
-            bufCtx.fillRect(cx + gx, cy + gy, 1, 1);
+            renderer.pixelCSS(cx + gx, cy + gy, color);
           }
         }
       }

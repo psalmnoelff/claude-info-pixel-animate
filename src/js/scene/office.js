@@ -96,9 +96,7 @@ class Office {
   drawDimOverlay() {
     if (!this.stateMachine || this.stateMachine.lightsDimProgress <= 0) return;
 
-    const ctx = this.renderer.getBufferContext();
     const alpha = this.stateMachine.lightsDimProgress;
-    ctx.fillStyle = `rgba(0, 0, 10, ${alpha})`;
-    ctx.fillRect(0, 0, CONFIG.WIDTH, CONFIG.HEIGHT - 32); // Don't dim the HUD
+    this.renderer.fillRectAlpha(0, 0, CONFIG.WIDTH, CONFIG.HEIGHT - 32, 'rgba(0, 0, 10, 1)', alpha);
   }
 }

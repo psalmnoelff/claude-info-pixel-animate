@@ -122,7 +122,6 @@ class Worker extends Character {
   _drawDeath(renderer) {
     const cx = Math.floor(this.x);
     const cy = Math.floor(this.y);
-    const bufCtx = renderer.getBufferContext();
 
     // Draw lying body (rotated 90 degrees - fallen over)
     const spriteName = this.animator.getCurrentSprite();
@@ -134,18 +133,12 @@ class Worker extends Character {
     }
 
     if (sprite && this.bodyAlpha > 0.01) {
-      bufCtx.save();
-      bufCtx.globalAlpha = this.bodyAlpha;
-      bufCtx.translate(cx + 8, cy + 14);
-      bufCtx.rotate(Math.PI / 2);
-      bufCtx.drawImage(sprite, -8, -8);
-      bufCtx.restore();
+      renderer.drawImageTransformed(sprite, cx + 8, cy + 14, Math.PI / 2, this.bodyAlpha, 8, 8);
     }
 
     // Draw soul floating up (after 0.8 seconds)
     if (this.deathTimer >= 0.8 && this.soulAlpha > 0.01) {
-      bufCtx.save();
-      bufCtx.globalAlpha = this.soulAlpha;
+      renderer.setAlpha(this.soulAlpha);
 
       const sx = cx + 4;
       const sy = cy - this.soulY;
@@ -163,7 +156,7 @@ class Worker extends Character {
       renderer.pixel(sx + 2, sy + 2, CONFIG.COL.BLACK);
       renderer.pixel(sx + 5, sy + 2, CONFIG.COL.BLACK);
 
-      bufCtx.restore();
+      renderer.resetAlpha();
     }
   }
 
