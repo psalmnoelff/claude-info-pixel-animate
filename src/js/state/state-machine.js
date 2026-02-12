@@ -139,12 +139,13 @@ class StateMachine {
         this.sleepParticleTimer = 0;
         this.activeWorkTimer = 0;
         leader.panicking = false;
-        // Walk workers out through the door instead of clearing instantly
-        if (this.charMgr.getWorkerCount() > 0) {
-          this._startWorkerWalkOut();
-        } else {
-          this.door.close();
+        // Let workers roam; they'll walk out after 60s if no new work arrives
+        for (const w of this.charMgr.workers) {
+          if (w.isOverflow) continue;
+          w.stopMovement();
+          this._startRoaming(w);
         }
+        this.door.close();
         break;
 
       case STATES.THINKING:
@@ -504,6 +505,11 @@ class StateMachine {
       return;
     }
 
+    // Pull workers out of roaming before walking them to the door
+    for (const w of workers) {
+      this.roamingChars.delete(w);
+    }
+
     this.door.open();
     this.walkingOutWorkers = true;
     this.workerWalkOutQueue = [...workers];
@@ -795,6 +801,11 @@ class StateMachine {
     // DONE timeout: after DONE_TIMEOUT seconds, start worker exit
     if (this.state === STATES.DONE && !this.workersExiting && this.stateTimer > CONFIG.DONE_TIMEOUT) {
       this.startWorkerExitSequence();
+    }
+
+    // IDLE worker walk-out: after 60s with no new work, workers leave
+    if (this.state === STATES.IDLE && !this.walkingOutWorkers && this.charMgr.getWorkerCount() > 0 && this.stateTimer > 60) {
+      this._startWorkerWalkOut();
     }
 
     // IDLE timeout: after IDLE_TIMEOUT seconds, start lights-out
