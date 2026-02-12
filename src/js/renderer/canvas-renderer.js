@@ -139,9 +139,29 @@ class CanvasRenderer {
 
   // Present: blit buffer to display canvas with scaling
   present() {
-    // Clear display with black
+    const scaledW = CONFIG.WIDTH * this.scale;
+    const scaledH = CONFIG.HEIGHT * this.scale;
+    const pad = 5;
+    const frame = 2;
+    const total = pad + frame; // total border thickness
+
+    // Clear display with black padding
     this.ctx.fillStyle = '#000';
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+    // White retro frame
+    this.ctx.fillStyle = '#fff';
+    this.ctx.fillRect(
+      this.offsetX - total, this.offsetY - total,
+      scaledW + total * 2, scaledH + total * 2
+    );
+
+    // Black inner padding
+    this.ctx.fillStyle = '#000';
+    this.ctx.fillRect(
+      this.offsetX - pad, this.offsetY - pad,
+      scaledW + pad * 2, scaledH + pad * 2
+    );
 
     // Apply screen shake offset
     let sx = 0, sy = 0;
@@ -155,7 +175,7 @@ class CanvasRenderer {
       this.buffer,
       0, 0, CONFIG.BUFFER_WIDTH, CONFIG.BUFFER_HEIGHT,
       this.offsetX + sx, this.offsetY + sy,
-      CONFIG.WIDTH * this.scale, CONFIG.HEIGHT * this.scale
+      scaledW, scaledH
     );
   }
 }

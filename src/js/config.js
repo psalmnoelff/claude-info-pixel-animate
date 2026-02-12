@@ -69,7 +69,7 @@ const CONFIG = {
   WHITEBOARD: { x: 6, y: 0, w: 5, h: 2 },
 
   // Door position
-  DOOR: { x: 17, y: 0, w: 2, h: 3 },
+  DOOR: { x: 17, y: 1, w: 1.5, h: 2 },
 
   // Leader default position (at own desk, centered between 2-tile desk)
   LEADER_DESK: -1,  // leader doesn't use a worker desk
