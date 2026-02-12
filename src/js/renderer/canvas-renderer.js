@@ -149,19 +149,24 @@ class CanvasRenderer {
     this.ctx.fillStyle = '#000';
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
-    // White retro frame
+    // White retro frame (rounded)
+    const radius = 6;
     this.ctx.fillStyle = '#fff';
-    this.ctx.fillRect(
+    this.ctx.beginPath();
+    this.ctx.roundRect(
       this.offsetX - total, this.offsetY - total,
-      scaledW + total * 2, scaledH + total * 2
+      scaledW + total * 2, scaledH + total * 2, radius
     );
+    this.ctx.fill();
 
-    // Black inner padding
+    // Black inner padding (rounded, slightly less radius)
     this.ctx.fillStyle = '#000';
-    this.ctx.fillRect(
+    this.ctx.beginPath();
+    this.ctx.roundRect(
       this.offsetX - pad, this.offsetY - pad,
-      scaledW + pad * 2, scaledH + pad * 2
+      scaledW + pad * 2, scaledH + pad * 2, radius - 2
     );
+    this.ctx.fill();
 
     // Apply screen shake offset
     let sx = 0, sy = 0;
