@@ -5,19 +5,30 @@ class Whiteboard {
     this.drawProgress = 0; // 0-1, how much is drawn
   }
 
+  // Pixel bounds of the whiteboard interior (for scribble placement)
+  _getBounds() {
+    const T = CONFIG.TILE;
+    const wb = CONFIG.WHITEBOARD;
+    const bx = wb.x * T;
+    const by = 4; // floating offset from top of wall
+    const bw = wb.w * T;
+    const bh = 24;
+    return { bx, by, bw, bh };
+  }
+
   // Add scribble marks when leader draws
   addScribble() {
-    const wb = CONFIG.WHITEBOARD;
-    const baseX = wb.x * CONFIG.TILE + 4;
-    const baseY = wb.y * CONFIG.TILE + 4;
-    const maxW = wb.w * CONFIG.TILE - 8;
-    const maxH = wb.h * CONFIG.TILE - 8;
+    const { bx, by, bw, bh } = this._getBounds();
+    const innerX = bx + 3;
+    const innerY = by + 3;
+    const innerW = bw - 6;
+    const innerH = bh - 6;
 
     // Add a few random colored pixels as "writing"
     for (let i = 0; i < 3; i++) {
       this.scribbles.push({
-        x: baseX + Math.floor(Math.random() * maxW),
-        y: baseY + Math.floor(Math.random() * maxH),
+        x: innerX + Math.floor(Math.random() * innerW),
+        y: innerY + Math.floor(Math.random() * innerH),
         color: [CONFIG.COL.BLUE, CONFIG.COL.RED, CONFIG.COL.DARK_GREEN][Math.floor(Math.random() * 3)]
       });
     }
@@ -35,21 +46,13 @@ class Whiteboard {
 
   draw() {
     const r = this.renderer;
-    const T = CONFIG.TILE;
-    const wb = CONFIG.WHITEBOARD;
+    const { bx, by, bw, bh } = this._getBounds();
 
-    // Draw whiteboard as one solid rectangle
-    const bx = wb.x * T;
-    const by = wb.y * T;
-    const bw = wb.w * T;
-    const bh = wb.h * T;
-    r.fillRect(bx + 1, by + 1, bw - 2, bh - 2, CONFIG.COL.WHITE);
+    // Black frame (2px border)
+    r.fillRect(bx, by, bw, bh, CONFIG.COL.BLACK);
 
-    // Border
-    r.fillRect(bx, by, bw, 1, CONFIG.COL.DARK_GREY);
-    r.fillRect(bx, by + bh - 1, bw, 1, CONFIG.COL.DARK_GREY);
-    r.fillRect(bx, by, 1, bh, CONFIG.COL.DARK_GREY);
-    r.fillRect(bx + bw - 1, by, 1, bh, CONFIG.COL.DARK_GREY);
+    // White interior
+    r.fillRect(bx + 2, by + 2, bw - 4, bh - 4, CONFIG.COL.WHITE);
 
     // Draw scribbles
     for (const s of this.scribbles) {
@@ -57,7 +60,13 @@ class Whiteboard {
       r.pixel(s.x + 1, s.y, s.color);
     }
 
-    // Whiteboard tray (bottom edge)
-    r.fillRect(wb.x * T + 2, (wb.y + wb.h) * T - 2, wb.w * T - 4, 2, CONFIG.COL.LIGHT_GREY);
+    // Pen holder tray (bottom-right, below board)
+    const trayX = bx + bw - 16;
+    const trayY = by + bh;
+    r.fillRect(trayX, trayY, 14, 3, CONFIG.COL.LIGHT_GREY);
+    // Marker caps (red, blue, green)
+    r.fillRect(trayX + 2, trayY, 2, 2, CONFIG.COL.RED);
+    r.fillRect(trayX + 6, trayY, 2, 2, CONFIG.COL.BLUE);
+    r.fillRect(trayX + 10, trayY, 2, 2, CONFIG.COL.GREEN);
   }
 }

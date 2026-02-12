@@ -10,16 +10,30 @@ class Office {
     const r = this.renderer;
     const T = CONFIG.TILE;
 
-    // Draw floor (checkerboard pattern)
+    // Carpet colors for seeded noise pattern
+    const carpetColors = [CONFIG.COL.DARK_BLUE, CONFIG.COL.BLUE, CONFIG.COL.INDIGO, CONFIG.COL.DARK_PURPLE];
+
     for (let row = 0; row < CONFIG.ROWS; row++) {
       for (let col = 0; col < CONFIG.COLS; col++) {
-        const isAlt = (row + col) % 2 === 0;
         if (row < 2) {
           // Wall area
           r.fillRect(col * T, row * T, T, T, CONFIG.COL.DARK_BLUE);
         } else {
-          // Floor
-          r.fillRect(col * T, row * T, T, T, isAlt ? CONFIG.COL.BLUE : CONFIG.COL.DARK_BLUE);
+          // Floor - seeded pseudo-random blue-tone carpet
+          const seed = (row * 31 + col * 17) % 97;
+          const dominant = seed < 45 ? CONFIG.COL.DARK_BLUE
+                         : seed < 75 ? CONFIG.COL.BLUE
+                         : seed < 90 ? CONFIG.COL.INDIGO
+                                     : CONFIG.COL.DARK_PURPLE;
+          r.fillRect(col * T, row * T, T, T, dominant);
+
+          // 2-3 accent pixels per tile for texture
+          for (let i = 0; i < 3; i++) {
+            const px = (seed * (i + 3) * 7 + i * 13) % T;
+            const py = (seed * (i + 5) * 11 + i * 7) % T;
+            const accentIdx = (seed + i * 23) % carpetColors.length;
+            r.pixel(col * T + px, row * T + py, carpetColors[accentIdx]);
+          }
         }
       }
     }
@@ -30,43 +44,65 @@ class Office {
     // Wall decoration - subtle horizontal line
     r.fillRect(0, T - 1, CONFIG.WIDTH, 1, CONFIG.COL.INDIGO);
 
-    // Windows on the wall (centered in their wall sections)
-    this._drawWindow(r, 30, 4, 20, 18);   // Left section: centered in x=0..80
-    this._drawWindow(r, 222, 4, 20, 18);  // Right section: centered in x=192..272
+    // Windows on the wall (larger, rounded)
+    this._drawWindow(r, 29, 3, 22, 20);   // Left section
+    this._drawWindow(r, 221, 3, 22, 20);  // Right section
 
     // Fire on window panes (overwrites blue sky with fire)
     if (this.fireStatus) this.fireStatus.drawFire();
 
     // Redraw cross dividers on top of fire (so panes look divided)
     if (this.fireStatus && this.fireStatus.fireIntensity > 0.01) {
-      this._drawWindowOverlay(r, 30, 4, 20, 18);
-      this._drawWindowOverlay(r, 222, 4, 20, 18);
+      this._drawWindowOverlay(r, 29, 3, 22, 20);
+      this._drawWindowOverlay(r, 221, 3, 22, 20);
     }
 
     // Window tint (orange glow on glass)
     if (this.fireStatus) this.fireStatus.drawWindowTint();
 
-    // Potted plants on the baseboard (wall level, not walkable)
-    this._drawPlant(r, 4 * T + 4, 2 * T - 10, CONFIG.COL.RED);     // Left of whiteboard
-    this._drawPlant(r, 12 * T + 4, 2 * T - 10, CONFIG.COL.YELLOW);  // Right of whiteboard
-    this._drawPlant(r, 16 * T + 4, 2 * T - 10, CONFIG.COL.PINK);    // Left of door
+    // Potted plants on the baseboard (wall level)
+    this._drawPlant(r, 4 * T + 4, 2 * T - 13, CONFIG.COL.RED);     // Left of whiteboard
+    this._drawPlant(r, 12 * T + 4, 2 * T - 13, CONFIG.COL.YELLOW);  // Right of whiteboard
+    this._drawPlant(r, 16 * T + 4, 2 * T - 13, CONFIG.COL.PINK);    // Left of door
 
     // Corner plants (bottom corners, just above HUD)
     const floorBottom = CONFIG.HEIGHT - 32 - 12;
-    this._drawPlant(r, 2, floorBottom, CONFIG.COL.GREEN);            // Lower-left
-    this._drawPlant(r, CONFIG.WIDTH - 10, floorBottom, CONFIG.COL.BLUE);   // Lower-right
+    this._drawPlant(r, 2, floorBottom - 3, CONFIG.COL.GREEN);            // Lower-left
+    this._drawPlant(r, CONFIG.WIDTH - 12, floorBottom - 3, CONFIG.COL.BLUE);  // Lower-right
   }
 
   _drawWindow(r, x, y, w, h) {
-    // Outer frame (light grey)
+    // Outer frame (2px grey border)
     r.fillRect(x, y, w, h, CONFIG.COL.LIGHT_GREY);
-    // Inner pane (light blue "sky")
+
+    // Rounded corners (replace with wall color)
+    r.pixel(x, y, CONFIG.COL.DARK_BLUE);
+    r.pixel(x + w - 1, y, CONFIG.COL.DARK_BLUE);
+    r.pixel(x, y + h - 1, CONFIG.COL.DARK_BLUE);
+    r.pixel(x + w - 1, y + h - 1, CONFIG.COL.DARK_BLUE);
+
+    // Inner pane (sky blue)
     r.fillRect(x + 2, y + 2, w - 4, h - 4, CONFIG.COL.BLUE);
+
     // Cross divider
-    r.fillRect(x + Math.floor(w / 2) - 0, y + 2, 1, h - 4, CONFIG.COL.LIGHT_GREY);
-    r.fillRect(x + 2, y + Math.floor(h / 2) - 0, w - 4, 1, CONFIG.COL.LIGHT_GREY);
-    // Highlight on glass (top-left pane)
-    r.fillRect(x + 4, y + 4, 2, 1, CONFIG.COL.WHITE);
+    r.fillRect(x + Math.floor(w / 2), y + 2, 1, h - 4, CONFIG.COL.LIGHT_GREY);
+    r.fillRect(x + 2, y + Math.floor(h / 2), w - 4, 1, CONFIG.COL.LIGHT_GREY);
+
+    // Glass highlights (top-left pane)
+    r.fillRect(x + 4, y + 4, 3, 1, CONFIG.COL.WHITE);
+    r.fillRect(x + 4, y + 5, 1, 2, CONFIG.COL.WHITE);
+
+    // Bottom-right reflection
+    const rx = x + Math.floor(w / 2) + 2;
+    const ry = y + Math.floor(h / 2) + 2;
+    r.fillRect(rx + 3, ry + 4, 2, 1, CONFIG.COL.WHITE);
+
+    // Curtain hints (darker strips at left and right edges of glass)
+    r.fillRect(x + 2, y + 2, 1, h - 4, CONFIG.COL.INDIGO);
+    r.fillRect(x + w - 3, y + 2, 1, h - 4, CONFIG.COL.INDIGO);
+
+    // Window sill (brown strip at bottom)
+    r.fillRect(x - 1, y + h, w + 2, 2, CONFIG.COL.BROWN);
   }
 
   _drawWindowOverlay(r, x, y, w, h) {
@@ -76,20 +112,40 @@ class Office {
   }
 
   _drawPlant(r, x, y, flowerColor) {
-    // Pot (brown trapezoid)
-    r.fillRect(x + 1, y + 6, 6, 4, CONFIG.COL.BROWN);
-    r.fillRect(x, y + 5, 8, 1, CONFIG.COL.BROWN);        // Rim
+    // Pot (trapezoidal with rim and shadow)
+    r.fillRect(x + 1, y + 7, 10, 1, CONFIG.COL.BROWN);       // wide rim
+    r.fillRect(x + 2, y + 8, 8, 5, CONFIG.COL.BROWN);        // pot body
+    r.fillRect(x + 2, y + 8, 8, 1, CONFIG.COL.ORANGE);       // rim highlight
+    r.fillRect(x + 3, y + 12, 6, 1, CONFIG.COL.DARK_GREY);   // pot shadow
+
     // Soil
-    r.fillRect(x + 2, y + 6, 4, 1, CONFIG.COL.DARK_GREEN);
-    // Stem
-    r.fillRect(x + 3, y + 2, 1, 4, CONFIG.COL.DARK_GREEN);
-    // Leaves
+    r.fillRect(x + 3, y + 8, 6, 1, CONFIG.COL.DARK_GREEN);
+
+    // Stems
+    r.fillRect(x + 5, y + 3, 1, 5, CONFIG.COL.DARK_GREEN);   // center stem
+    r.fillRect(x + 3, y + 4, 1, 4, CONFIG.COL.DARK_GREEN);   // left stem
+    r.fillRect(x + 7, y + 5, 1, 3, CONFIG.COL.DARK_GREEN);   // right stem
+
+    // Leaves (varied greens)
+    r.fillRect(x + 1, y + 4, 2, 1, CONFIG.COL.GREEN);
     r.fillRect(x + 2, y + 3, 1, 1, CONFIG.COL.GREEN);
-    r.fillRect(x + 4, y + 2, 1, 1, CONFIG.COL.GREEN);
-    r.fillRect(x + 1, y + 1, 1, 1, CONFIG.COL.GREEN);
-    r.fillRect(x + 5, y + 1, 1, 1, CONFIG.COL.GREEN);
-    // Flower
-    r.fillRect(x + 2, y, 3, 2, flowerColor);
+    r.fillRect(x + 7, y + 4, 2, 1, CONFIG.COL.GREEN);
+    r.fillRect(x + 8, y + 3, 1, 1, CONFIG.COL.DARK_GREEN);
+    r.fillRect(x + 4, y + 5, 1, 1, CONFIG.COL.GREEN);
+    r.fillRect(x + 6, y + 3, 1, 1, CONFIG.COL.GREEN);
+
+    // Main flower (above center stem)
+    r.fillRect(x + 4, y + 1, 3, 2, flowerColor);
+    r.pixel(x + 5, y, flowerColor);                           // top petal
+    r.pixel(x + 5, y + 1, CONFIG.COL.YELLOW);                 // center
+
+    // Small left flower
+    r.fillRect(x + 2, y + 2, 2, 2, flowerColor);
+    r.pixel(x + 2, y + 2, CONFIG.COL.YELLOW);                 // center
+
+    // Right bud
+    r.pixel(x + 8, y + 2, flowerColor);
+    r.pixel(x + 9, y + 3, flowerColor);
   }
 
   // Draw dark overlay for lights-out effect (call after all scene drawing, before HUD)

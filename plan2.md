@@ -41,10 +41,14 @@ Upgrade the rendering pipeline from 16x16 to 32x32 sprites using a `PIXEL_SCALE:
 - [x] Tinted sprites also use Scale2x path
 - [x] Native 32x32 sprites still render 1:1 (data.length === 1024 detection)
 
-## Phase 4: Native 32x32 Sprite Art (future)
-- [ ] Create native 32x32 sprite data (1024-element arrays) in sprite-data.js
-- [ ] Replace upscaled 16x16 sprites one-by-one with hand-drawn 32x32 versions
-- [ ] The `isNative32` detection (data.length === 1024) already handles this automatically
+## Phase 4: Native 32x32 Sprite Art (DONE)
+- [x] Created `sprite-data-32.js` with programmatic sprite construction using helper functions
+- [x] All 43 leader + worker sprites replaced with hand-drawn 32x32 chibi-style art
+- [x] Leader: brown hair with highlights, blue glasses, eyebrows, dark blue shirt, peach hands
+- [x] Worker: same head but no glasses, light grey tintable shirt
+- [x] All poses covered: idle, walk_down/up/right, sit, type, draw, sleep, phone
+- [x] Uses `R()` row builder + `replaceRows()`/`shiftDown()` to derive variants from base designs
+- [x] Script tag added to index.html after sprite-data.js
 
 ## Architecture Notes
 - Logical coordinates remain in the original 320x208 / 16px-tile space
