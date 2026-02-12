@@ -45,6 +45,9 @@ class StateMachine {
     this.planningPhase = null; // 'drawing', 'pacing_left', 'pacing_right', 'pausing'
     this.planningTimer = 0;
 
+    // Roaming behavior (IDLE/DONE: characters wander and sleep)
+    this.roamingChars = new Map(); // character -> { phase, timer }
+
     // Activity timer - auto-transition to DONE after inactivity
     this.lastActivityTime = 0;
   }
@@ -86,6 +89,7 @@ class StateMachine {
     switch (state) {
       case STATES.IDLE:
       case STATES.DONE:
+        this._stopAllRoaming();
         this.particles.clear();
         break;
       case STATES.THINKING:
@@ -113,7 +117,7 @@ class StateMachine {
         this.whiteboard.clearBoard();
         this.charMgr.clearWorkers();
         leader.stopMovement();
-        leader.goToOwnDesk(() => leader.startSleeping());
+        this._startRoaming(leader);
         this.door.close();
         this.sleepParticleTimer = 0;
         break;
@@ -158,12 +162,13 @@ class StateMachine {
         break;
 
       case STATES.DONE:
-        // Everyone sleeps
+        // Everyone roams: walk around, sleep at random spots, repeat
         leader.stopMovement();
-        leader.goToOwnDesk(() => leader.startSleeping());
+        this._startRoaming(leader);
         for (const w of this.charMgr.workers) {
           if (w.isOverflow) continue;
-          w.goToDeskAndType(() => w.startSleeping());
+          w.stopMovement();
+          this._startRoaming(w);
         }
         this.sleepParticleTimer = 0;
         break;
@@ -277,10 +282,10 @@ class StateMachine {
         leader.startTyping();
         break;
       case STATES.DONE:
-        leader.startSleeping();
+        this._startRoaming(leader);
         break;
       case STATES.IDLE:
-        leader.startSleeping();
+        this._startRoaming(leader);
         break;
     }
   }
@@ -320,6 +325,8 @@ class StateMachine {
   // --- Worker Exit Sequence (leader shoots workers) ---
 
   startWorkerExitSequence() {
+    this._stopAllRoaming();
+
     const workers = this.charMgr.workers.filter(w => w.visible && !w.dying);
     if (workers.length === 0) {
       this.transition(STATES.IDLE);
@@ -331,9 +338,10 @@ class StateMachine {
     this.workerExitTimer = 0;
     this.exitPhase = 'approaching'; // approaching, shooting, dying, next
 
-    // Leader stops and begins the sequence
+    // Stop all characters and begin the sequence
     const leader = this.charMgr.leader;
     leader.stopMovement();
+    for (const w of workers) w.stopMovement();
     this._approachNextWorker();
   }
 
@@ -479,10 +487,134 @@ class StateMachine {
     }
   }
 
+  // --- Roaming Behavior (IDLE/DONE: wander and sleep at random spots) ---
+
+  _getCharDeskPos(char) {
+    if (char.type === 'leader') return char.getLeaderSitPosition();
+    if (char.deskIndex >= 0) return char.getSitPosition(char.deskIndex);
+    return null;
+  }
+
+  _startRoaming(char) {
+    const target = this._getRandomWalkablePos();
+    const roamState = { phase: 'walking', timer: 0 };
+    this.roamingChars.set(char, roamState);
+    char.moveTo(target, CONFIG.MOVE_SPEED * 0.6, () => {
+      char.setIdle();
+      roamState.phase = 'idle';
+      roamState.timer = 2 + Math.random() * 3;
+    });
+  }
+
+  _stopAllRoaming() {
+    this.roamingChars.clear();
+  }
+
+  _getRandomWalkablePos() {
+    const T = CONFIG.TILE;
+    const minX = T;
+    const maxX = CONFIG.WIDTH - 2 * T;
+    const minY = 2 * T + 4;
+    const maxY = (CONFIG.ROWS - 2) * T;
+
+    // Build desk bounding boxes to avoid (with padding)
+    const deskBoxes = [];
+    for (const d of CONFIG.DESKS) {
+      deskBoxes.push({
+        x1: d.x * T - 4, y1: d.y * T - 4,
+        x2: (d.x + 2) * T + 4, y2: (d.y + 2) * T + 4,
+      });
+    }
+    // Leader desk (2 tiles wide)
+    const ld = CONFIG.LEADER_DESK_POS;
+    deskBoxes.push({
+      x1: ld.x * T - 4, y1: ld.y * T - 4,
+      x2: (ld.x + 2) * T + 4, y2: (ld.y + 2) * T + 4,
+    });
+
+    for (let i = 0; i < 30; i++) {
+      const x = minX + Math.random() * (maxX - minX);
+      const y = minY + Math.random() * (maxY - minY);
+
+      // Check desk collision
+      let blocked = false;
+      for (const box of deskBoxes) {
+        if (x + 16 > box.x1 && x < box.x2 && y + 16 > box.y1 && y < box.y2) {
+          blocked = true;
+          break;
+        }
+      }
+      if (blocked) continue;
+
+      // Check distance from other roaming characters
+      let tooClose = false;
+      for (const [otherChar] of this.roamingChars) {
+        if (Math.abs(x - otherChar.x) < 20 && Math.abs(y - otherChar.y) < 20) {
+          tooClose = true;
+          break;
+        }
+      }
+      if (tooClose) continue;
+
+      return { x, y };
+    }
+
+    // Fallback: open area below desks
+    return { x: CONFIG.WIDTH / 2, y: (CONFIG.ROWS - 3) * T };
+  }
+
+  updateRoaming(dt) {
+    for (const [char, roamState] of this.roamingChars) {
+      if (!char.visible || char.dying) continue;
+
+      // Don't interfere if character is mid-walk from a moveTo
+      if (roamState.phase === 'walking') continue;
+
+      roamState.timer -= dt;
+      if (roamState.timer > 0) continue;
+
+      // Decide next action
+      const deskPos = this._getCharDeskPos(char);
+
+      if (roamState.phase === 'sleeping') {
+        // Was sleeping at desk -> walk to a random spot and idle
+        const target = this._getRandomWalkablePos();
+        roamState.phase = 'walking';
+        char.moveTo(target, CONFIG.MOVE_SPEED * 0.6, () => {
+          char.setIdle();
+          roamState.phase = 'idle';
+          roamState.timer = 2 + Math.random() * 3;
+        });
+      } else {
+        // Was idling at a random spot -> either wander more or go back to desk to sleep
+        if (deskPos && Math.random() < 0.35) {
+          // Go back to desk and sleep
+          roamState.phase = 'walking';
+          char.moveTo(deskPos, CONFIG.MOVE_SPEED * 0.6, () => {
+            char.sitDown();
+            char.startSleeping();
+            roamState.phase = 'sleeping';
+            roamState.timer = 4 + Math.random() * 5;
+          });
+        } else {
+          // Wander to another random spot
+          const target = this._getRandomWalkablePos();
+          roamState.phase = 'walking';
+          char.moveTo(target, CONFIG.MOVE_SPEED * 0.6, () => {
+            char.setIdle();
+            roamState.phase = 'idle';
+            roamState.timer = 2 + Math.random() * 3;
+          });
+        }
+      }
+    }
+  }
+
   // --- Lights-Out Sequence (IDLE timeout) ---
 
   startLightsOutSequence() {
     if (this.lightsOutSequenceActive) return;
+    this._stopAllRoaming();
     this.lightsOutSequenceActive = true;
     this.leaderExiting = true;
 
@@ -553,6 +685,11 @@ class StateMachine {
     const activeStates = [STATES.CODING, STATES.THINKING, STATES.DELEGATING, STATES.MULTI_AGENT, STATES.OVERFLOW, STATES.PLANNING];
     if (activeStates.includes(this.state) && this.lastActivityTime > CONFIG.INACTIVITY_TIMEOUT) {
       this.transition(STATES.DONE);
+    }
+
+    // Roaming update (IDLE/DONE: characters wander and sleep)
+    if (this.state === STATES.DONE || this.state === STATES.IDLE) {
+      this.updateRoaming(dt);
     }
 
     // Sleep ZZZ particles (for both IDLE and DONE states)
@@ -674,6 +811,7 @@ class StateMachine {
   // Full reset to initial state (lights off, leader hidden)
   reset() {
     // Cancel any active sequences
+    this._stopAllRoaming();
     this._cancelWorkerExit();
     if (this.janitorActive && this.janitor) {
       this.janitor.visible = false;
