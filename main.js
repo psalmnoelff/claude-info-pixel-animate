@@ -20,8 +20,8 @@ let lastKnownIncidents = [];
 
 function createWindow() {
   mainWindow = new BrowserWindow({
-    width: 660,
-    height: 480,
+    width: 680,
+    height: 500,
     minWidth: 512,
     minHeight: 384,
     backgroundColor: '#1d2b53',

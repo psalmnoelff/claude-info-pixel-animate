@@ -113,6 +113,12 @@ Press **D** to toggle demo mode. The scene cycles through all states every 4 sec
 | `Escape`  | Open / close the settings screen        |
 | `D`       | Toggle demo mode (auto-cycles states)   |
 | `T`       | Toggle always-on-top window pinning     |
+| `P`       | Toggle leader panic (stress test)       |
+| `I`       | Toggle snow storm (freeze test)         |
+| `F`       | Toggle fire test (status incident)      |
+| `E`       | Workers exit one by one                 |
+| `S`       | Cycle active sessions                   |
+| `R`       | Reset to initial state                  |
 | `Alt`     | Show the menu bar (auto-hidden)         |
 | `0`       | Force state: Idle                       |
 | `1`       | Force state: Thinking                   |
@@ -186,7 +192,7 @@ The scene is driven by a finite state machine with these visual states:
 - **32x32 pixel sprites** (at 2x pixel scale from 16x16 logical tiles) defined as flat arrays of palette indices -- no image files needed.
 - **PICO-8-inspired 16-color palette** for all rendering.
 - **60 FPS game loop** with fixed-timestep updates, try/catch crash resilience, and variable-rate rendering via `requestAnimationFrame`.
-- **Retro frame** -- white border with black padding around the game viewport.
+- **Retro frame** -- rounded white border with black padding around the game viewport.
 
 ### IPC Architecture
 
