@@ -17,6 +17,11 @@ class EventClassifier {
     'Task'
   ]);
 
+  // Planning tools - trigger PLANNING state
+  static PLANNING_TOOLS = new Set([
+    'EnterPlanMode'
+  ]);
+
   // Process a parsed event and trigger state transitions
   classify(event) {
     this.stateMachine.signalActivity();
@@ -76,7 +81,12 @@ class EventClassifier {
   _handleToolUse(toolUse) {
     const name = toolUse.name;
 
-    if (EventClassifier.DELEGATION_TOOLS.has(name)) {
+    if (EventClassifier.PLANNING_TOOLS.has(name)) {
+      this.stateMachine.transition(STATES.PLANNING);
+    } else if (name === 'ExitPlanMode') {
+      // Exit planning - transition to THINKING (Claude will start implementing)
+      this.stateMachine.transition(STATES.THINKING);
+    } else if (EventClassifier.DELEGATION_TOOLS.has(name)) {
       const workerCount = this.stateMachine.charMgr.getWorkerCount();
       if (workerCount === 0) {
         this.stateMachine.transition(STATES.DELEGATING);
@@ -85,7 +95,7 @@ class EventClassifier {
       }
     } else if (EventClassifier.CODING_TOOLS.has(name)) {
       const currentState = this.stateMachine.getState();
-      if (currentState !== STATES.CODING) {
+      if (currentState !== STATES.CODING && currentState !== STATES.PLANNING) {
         this.stateMachine.transition(STATES.CODING);
       }
     }

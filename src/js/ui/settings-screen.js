@@ -90,6 +90,7 @@ class SettingsScreen {
             <tr><td style="color: #29adff;">T</td><td>Toggle always-on-top</td></tr>
             <tr><td style="color: #29adff;">S</td><td>Cycle active sessions</td></tr>
             <tr><td style="color: #29adff;">E</td><td>Workers exit one by one</td></tr>
+            <tr><td style="color: #29adff;">F</td><td>Toggle fire test (status incident)</td></tr>
             <tr><td colspan="2" style="padding-top: 4px; color: #83769c;">--- Test States ---</td></tr>
             <tr><td style="color: #ffa300;">0</td><td>IDLE (lights out)</td></tr>
             <tr><td style="color: #ffa300;">1</td><td>THINKING (whiteboard)</td></tr>

@@ -3,6 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const { spawn } = require('child_process');
+const https = require('https');
 
 let mainWindow;
 let claudeProcess = null;
@@ -14,6 +15,8 @@ let lastCWValue = null;   // cached CW value to prevent blinking
 let fileSizes = new Map(); // path -> last known size (for growth detection)
 let cachedWeeklyUsage = null; // cached weekly usage result
 let weeklyUsageCacheTime = 0; // when it was last computed
+let statusPollInterval = null;
+let lastKnownIncidents = [];
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -31,11 +34,13 @@ function createWindow() {
   });
 
   mainWindow.loadFile(path.join(__dirname, 'src', 'index.html'));
+  startStatusPolling();
 
   mainWindow.on('closed', () => {
     mainWindow = null;
     killClaude();
     stopSessionWatcher();
+    stopStatusPolling();
   });
 }
 
@@ -524,6 +529,103 @@ function startSessionWatcher() {
     }
   }, 2000);
 }
+
+// --- RSS Status Polling (Claude incident detection) ---
+
+function fetchRSS() {
+  return new Promise((resolve, reject) => {
+    const req = https.get('https://status.claude.com/history.rss', {
+      headers: { 'User-Agent': 'ClaudeInfo/1.0' },
+      timeout: 10000,
+    }, (res) => {
+      let data = '';
+      res.on('data', (chunk) => { data += chunk; });
+      res.on('end', () => resolve(data));
+    });
+    req.on('error', reject);
+    req.on('timeout', () => { req.destroy(); reject(new Error('timeout')); });
+  });
+}
+
+function decodeHTMLEntities(str) {
+  if (!str) return '';
+  // Strip HTML tags
+  let decoded = str.replace(/<[^>]*>/g, '');
+  // Decode common entities
+  decoded = decoded.replace(/&amp;/g, '&');
+  decoded = decoded.replace(/&lt;/g, '<');
+  decoded = decoded.replace(/&gt;/g, '>');
+  decoded = decoded.replace(/&quot;/g, '"');
+  decoded = decoded.replace(/&#039;/g, "'");
+  decoded = decoded.replace(/&apos;/g, "'");
+  return decoded.trim();
+}
+
+function parseRSSItems(xml) {
+  const items = [];
+  const itemRegex = /<item>([\s\S]*?)<\/item>/gi;
+  let match;
+  while ((match = itemRegex.exec(xml)) !== null) {
+    const block = match[1];
+    const title = (block.match(/<title>([\s\S]*?)<\/title>/i) || [])[1] || '';
+    const description = (block.match(/<description>([\s\S]*?)<\/description>/i) || [])[1] || '';
+    const link = (block.match(/<link>([\s\S]*?)<\/link>/i) || [])[1] || '';
+    const pubDate = (block.match(/<pubDate>([\s\S]*?)<\/pubDate>/i) || [])[1] || '';
+    items.push({
+      title: decodeHTMLEntities(title),
+      description: decodeHTMLEntities(description),
+      link: decodeHTMLEntities(link),
+      pubDate: decodeHTMLEntities(pubDate),
+    });
+  }
+  return items;
+}
+
+async function checkClaudeStatus() {
+  try {
+    const xml = await fetchRSS();
+    const items = parseRSSItems(xml);
+
+    // Active incidents: title contains "errors" AND description does NOT contain "resolved"
+    const activeIncidents = items.filter(item => {
+      const titleLower = (item.title || '').toLowerCase();
+      const descLower = (item.description || '').toLowerCase();
+      return titleLower.includes('errors') && !descLower.includes('resolved');
+    });
+
+    // Recent incidents (last 5 for context)
+    const recentIncidents = items.slice(0, 5);
+
+    const result = {
+      hasActiveIncident: activeIncidents.length > 0,
+      activeIncidents,
+      recentIncidents,
+      lastChecked: Date.now(),
+    };
+
+    lastKnownIncidents = result;
+    mainWindow?.webContents.send('claude:status-rss', result);
+  } catch (e) {
+    // Silently catch network errors
+  }
+}
+
+function startStatusPolling() {
+  stopStatusPolling();
+  checkClaudeStatus();
+  statusPollInterval = setInterval(checkClaudeStatus, 150000); // 2.5 minutes
+}
+
+function stopStatusPolling() {
+  if (statusPollInterval) {
+    clearInterval(statusPollInterval);
+    statusPollInterval = null;
+  }
+}
+
+ipcMain.handle('claude:check-status', () => {
+  return lastKnownIncidents;
+});
 
 ipcMain.handle('claude:watch', () => {
   startSessionWatcher();

@@ -1,8 +1,9 @@
 // Office background rendering - floor, walls, furniture
 class Office {
-  constructor(renderer, stateMachine) {
+  constructor(renderer, stateMachine, fireStatus) {
     this.renderer = renderer;
     this.stateMachine = stateMachine;
+    this.fireStatus = fireStatus;
   }
 
   draw() {
@@ -33,6 +34,18 @@ class Office {
     this._drawWindow(r, 30, 4, 20, 18);   // Left section: centered in x=0..80
     this._drawWindow(r, 222, 4, 20, 18);  // Right section: centered in x=192..272
 
+    // Fire on window panes (overwrites blue sky with fire)
+    if (this.fireStatus) this.fireStatus.drawFire();
+
+    // Redraw cross dividers on top of fire (so panes look divided)
+    if (this.fireStatus && this.fireStatus.fireIntensity > 0.01) {
+      this._drawWindowOverlay(r, 30, 4, 20, 18);
+      this._drawWindowOverlay(r, 222, 4, 20, 18);
+    }
+
+    // Window tint (orange glow on glass)
+    if (this.fireStatus) this.fireStatus.drawWindowTint();
+
     // Potted plants on the baseboard (wall level, not walkable)
     this._drawPlant(r, 4 * T + 4, 2 * T - 10, CONFIG.COL.RED);     // Left of whiteboard
     this._drawPlant(r, 12 * T + 4, 2 * T - 10, CONFIG.COL.YELLOW);  // Right of whiteboard
@@ -54,6 +67,12 @@ class Office {
     r.fillRect(x + 2, y + Math.floor(h / 2) - 0, w - 4, 1, CONFIG.COL.LIGHT_GREY);
     // Highlight on glass (top-left pane)
     r.fillRect(x + 4, y + 4, 2, 1, CONFIG.COL.WHITE);
+  }
+
+  _drawWindowOverlay(r, x, y, w, h) {
+    // Cross divider (on top of fire)
+    r.fillRect(x + Math.floor(w / 2), y + 2, 1, h - 4, CONFIG.COL.LIGHT_GREY);
+    r.fillRect(x + 2, y + Math.floor(h / 2), w - 4, 1, CONFIG.COL.LIGHT_GREY);
   }
 
   _drawPlant(r, x, y, flowerColor) {

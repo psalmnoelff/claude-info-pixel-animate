@@ -7,6 +7,7 @@ const STATES = {
   DONE: 'DONE',
   MULTI_AGENT: 'MULTI_AGENT',
   OVERFLOW: 'OVERFLOW',
+  PLANNING: 'PLANNING',
 };
 
 class StateMachine {
@@ -39,6 +40,10 @@ class StateMachine {
     this.janitorEraseTimer = 0;
     this.janitorEraseCount = 0;
     this.janitorMopTimer = 0;
+
+    // Planning sequence
+    this.planningPhase = null; // 'drawing', 'pacing_left', 'pacing_right', 'pausing'
+    this.planningTimer = 0;
 
     // Activity timer - auto-transition to DONE after inactivity
     this.lastActivityTime = 0;
@@ -86,6 +91,10 @@ class StateMachine {
       case STATES.THINKING:
         // Stop drawing on whiteboard when leaving THINKING
         this.charMgr.leader.isDrawing = false;
+        break;
+      case STATES.PLANNING:
+        this.charMgr.leader.isDrawing = false;
+        this.planningPhase = null;
         break;
     }
   }
@@ -184,6 +193,15 @@ class StateMachine {
       case STATES.OVERFLOW:
         // Just a visual marker, same as MULTI_AGENT
         break;
+
+      case STATES.PLANNING:
+        // Leader walks to whiteboard and starts planning cycle
+        leader.stopMovement();
+        leader.goToWhiteboard(this.whiteboard, () => {
+          this.planningPhase = 'drawing';
+          this.planningTimer = 0;
+        });
+        break;
     }
   }
 
@@ -216,6 +234,8 @@ class StateMachine {
     switch (state) {
       case STATES.THINKING:
         return CONFIG.WHITEBOARD_POS;
+      case STATES.PLANNING:
+        return CONFIG.WHITEBOARD_POS;
       case STATES.DELEGATING:
         return CONFIG.WHITEBOARD_POS;
       case STATES.CODING:
@@ -244,6 +264,14 @@ class StateMachine {
         leader.setAnimation('leader_draw');
         leader.isDrawing = true;
         leader.drawTimer = 0;
+        break;
+      case STATES.PLANNING:
+        leader.state = 'drawing';
+        leader.setAnimation('leader_draw');
+        leader.isDrawing = true;
+        leader.drawTimer = 0;
+        this.planningPhase = 'drawing';
+        this.planningTimer = 0;
         break;
       case STATES.CODING:
         leader.startTyping();
@@ -400,6 +428,56 @@ class StateMachine {
     this.currentExitTarget = null;
   }
 
+  // --- Planning Sequence (whiteboard -> pace -> pause -> repeat) ---
+
+  updatePlanningSequence(dt) {
+    if (this.state !== STATES.PLANNING || !this.planningPhase) return;
+
+    const leader = this.charMgr.leader;
+    this.planningTimer += dt;
+
+    switch (this.planningPhase) {
+      case 'drawing':
+        // Draw on whiteboard for ~3s, then pace left
+        if (this.planningTimer >= 3.0) {
+          leader.isDrawing = false;
+          this.planningPhase = 'pacing_left';
+          this.planningTimer = 0;
+          leader.moveTo({ x: 96, y: CONFIG.WHITEBOARD_POS.y }, CONFIG.MOVE_SPEED, () => {
+            this.planningPhase = 'pacing_right';
+            this.planningTimer = 0;
+          });
+        }
+        break;
+
+      case 'pacing_right':
+        // Walk right to ~x=160, then pause
+        if (this.planningTimer < 0.1) {
+          leader.moveTo({ x: 160, y: CONFIG.WHITEBOARD_POS.y }, CONFIG.MOVE_SPEED, () => {
+            this.planningPhase = 'pausing';
+            this.planningTimer = 0;
+            leader.setIdle();
+          });
+          this.planningTimer = 0.1; // prevent re-triggering
+        }
+        break;
+
+      case 'pausing':
+        // Idle/thinking for ~2s, then walk back to whiteboard to draw again
+        if (this.planningTimer >= 2.0) {
+          this.planningPhase = 'returning';
+          this.planningTimer = 0;
+          leader.goToWhiteboard(this.whiteboard, () => {
+            this.planningPhase = 'drawing';
+            this.planningTimer = 0;
+          });
+        }
+        break;
+
+      // 'pacing_left' and 'returning' are handled by moveTo callbacks
+    }
+  }
+
   // --- Lights-Out Sequence (IDLE timeout) ---
 
   startLightsOutSequence() {
@@ -454,6 +532,11 @@ class StateMachine {
       this.updateWorkerExitSequence(dt);
     }
 
+    // Planning sequence update
+    if (this.state === STATES.PLANNING) {
+      this.updatePlanningSequence(dt);
+    }
+
     // DONE timeout: after DONE_TIMEOUT seconds, start worker exit
     if (this.state === STATES.DONE && !this.workersExiting && this.stateTimer > CONFIG.DONE_TIMEOUT) {
       this.startWorkerExitSequence();
@@ -466,7 +549,7 @@ class StateMachine {
 
     // Inactivity timeout: auto-transition to DONE if no events for 2 minutes
     this.lastActivityTime += dt;
-    const activeStates = [STATES.CODING, STATES.THINKING, STATES.DELEGATING, STATES.MULTI_AGENT, STATES.OVERFLOW];
+    const activeStates = [STATES.CODING, STATES.THINKING, STATES.DELEGATING, STATES.MULTI_AGENT, STATES.OVERFLOW, STATES.PLANNING];
     if (activeStates.includes(this.state) && this.lastActivityTime > CONFIG.INACTIVITY_TIMEOUT) {
       this.transition(STATES.DONE);
     }
