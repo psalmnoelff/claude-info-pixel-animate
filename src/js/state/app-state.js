@@ -20,8 +20,9 @@ class AppState {
     this.sonnetLimit = 2000000;
 
     // Context window for current session
+    // Effective limit excludes autocompact buffer (~33k tokens reserved by Claude Code)
     this.contextUsed = 0;
-    this.contextLimit = 200000;
+    this.contextLimit = 167000;
     this._prevContextUsed = 0;
     this.janitorNeeded = false; // set when context is full or compacted
 
