@@ -50,6 +50,15 @@ class StateMachine {
 
     // Activity timer - auto-transition to DONE after inactivity
     this.lastActivityTime = 0;
+
+    // Leader panic (long active work session)
+    this.activeWorkTimer = 0;
+    this.leaderPanicking = false;
+
+    // Snow storm (extended inactivity)
+    this.globalInactivityTimer = 0;
+    this.snowProgress = 0; // 0 to 1
+    this.snowSpawnTimer = 0;
   }
 
   getState() {
@@ -120,6 +129,8 @@ class StateMachine {
         this._startRoaming(leader);
         this.door.close();
         this.sleepParticleTimer = 0;
+        this.activeWorkTimer = 0;
+        leader.panicking = false;
         break;
 
       case STATES.THINKING:
@@ -171,6 +182,8 @@ class StateMachine {
           this._startRoaming(w);
         }
         this.sleepParticleTimer = 0;
+        this.activeWorkTimer = 0;
+        leader.panicking = false;
         break;
 
       case STATES.MULTI_AGENT: {
@@ -771,6 +784,57 @@ class StateMachine {
         }
       }
     }
+
+    // --- Leader panic (long active work session) ---
+    const activeStatesForPanic = [STATES.CODING, STATES.THINKING, STATES.DELEGATING, STATES.MULTI_AGENT, STATES.OVERFLOW, STATES.PLANNING];
+    if (activeStatesForPanic.includes(this.state)) {
+      this.activeWorkTimer += dt;
+    }
+    this.leaderPanicking = this.activeWorkTimer >= CONFIG.PANIC_TIMEOUT;
+    this.charMgr.leader.panicking = this.leaderPanicking;
+
+    // Sweat drop particles when panicking
+    if (this.leaderPanicking && this.charMgr.leader.visible) {
+      if (Math.random() < 0.08) {
+        const lx = this.charMgr.leader.x;
+        const ly = this.charMgr.leader.y;
+        this.particles.spawnSweat(lx + 6 + Math.random() * 4, ly + 2);
+      }
+    }
+
+    // --- Snow storm (extended inactivity) ---
+    this.globalInactivityTimer += dt;
+    if (this.globalInactivityTimer >= CONFIG.SNOW_START_TIMEOUT) {
+      // Snow builds up
+      const snowRange = CONFIG.SNOW_FULL_TIMEOUT - CONFIG.SNOW_START_TIMEOUT;
+      const elapsed = this.globalInactivityTimer - CONFIG.SNOW_START_TIMEOUT;
+      this.snowProgress = Math.min(1, elapsed / snowRange);
+    } else if (this.snowProgress > 0) {
+      // Snow melting (activity resumed but still fading)
+      this.snowProgress = Math.max(0, this.snowProgress - CONFIG.SNOW_MELT_SPEED * dt);
+    }
+
+    // Apply freeze to all characters
+    const freezeThreshold = 0.2;
+    const freeze = this.snowProgress > freezeThreshold ? this.snowProgress : 0;
+    this.charMgr.leader.freezeProgress = freeze;
+    for (const w of this.charMgr.workers) {
+      w.freezeProgress = freeze;
+    }
+    if (this.janitor) this.janitor.freezeProgress = freeze;
+
+    // Spawn snow particles
+    if (this.snowProgress > 0) {
+      this.snowSpawnTimer += dt;
+      const spawnRate = 0.02 + this.snowProgress * 0.08; // faster as storm intensifies
+      if (this.snowSpawnTimer > spawnRate) {
+        this.snowSpawnTimer = 0;
+        const count = Math.ceil(this.snowProgress * 4);
+        for (let i = 0; i < count; i++) {
+          this.particles.spawnSnow(this.snowProgress);
+        }
+      }
+    }
   }
 
   // --- Janitor Sequence (context full/compacted -> clean whiteboard) ---
@@ -869,9 +933,18 @@ class StateMachine {
     this.lightsOutSequenceActive = false;
     this.leaderExiting = false;
 
+    // Reset panic and snow
+    this.activeWorkTimer = 0;
+    this.leaderPanicking = false;
+    this.globalInactivityTimer = 0;
+    this.snowProgress = 0;
+    this.snowSpawnTimer = 0;
+
     const leader = this.charMgr.leader;
     leader.stopMovement();
     leader.visible = false;
+    leader.panicking = false;
+    leader.freezeProgress = 0;
     leader.x = CONFIG.DOOR_POS.x;
     leader.y = CONFIG.DOOR_POS.y;
     leader.setIdle();
@@ -879,9 +952,10 @@ class StateMachine {
     this.door.close();
   }
 
-  // Signal that new events are arriving (resets inactivity timer)
+  // Signal that new events are arriving (resets inactivity timer and snow)
   signalActivity() {
     this.lastActivityTime = 0;
+    this.globalInactivityTimer = 0;
   }
 
   // Handle keyboard testing (1-5 keys)

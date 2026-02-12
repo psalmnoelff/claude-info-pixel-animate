@@ -101,4 +101,12 @@ const CONFIG = {
   IDLE_TIMEOUT: 300,        // 5 minutes in IDLE before lights-out
   INACTIVITY_TIMEOUT: 120,  // 2 minutes of no events -> auto DONE
   WORKER_EXIT_STAGGER: 1.5, // seconds between worker departures
+
+  // Panic effect (leader stressed from long work session)
+  PANIC_TIMEOUT: 1800,      // 30 minutes of continuous active work
+
+  // Snow storm (inactivity freeze)
+  SNOW_START_TIMEOUT: 180,  // 3 minutes of no events before snow starts
+  SNOW_FULL_TIMEOUT: 420,   // 7 minutes for full blizzard intensity
+  SNOW_MELT_SPEED: 0.15,    // snow progress decay per second when activity resumes
 };

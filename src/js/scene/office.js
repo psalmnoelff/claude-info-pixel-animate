@@ -147,4 +147,41 @@ class Office {
     const alpha = this.stateMachine.lightsDimProgress;
     this.renderer.fillRectAlpha(0, 0, CONFIG.WIDTH, CONFIG.HEIGHT - 32, 'rgba(0, 0, 10, 1)', alpha);
   }
+
+  // Draw snow accumulation on ground and furniture
+  drawSnow() {
+    if (!this.stateMachine || this.stateMachine.snowProgress <= 0) return;
+
+    const r = this.renderer;
+    const T = CONFIG.TILE;
+    const sp = this.stateMachine.snowProgress;
+
+    // Snow on baseboard/wall bottom
+    const baseSnowH = Math.floor(sp * 6);
+    if (baseSnowH > 0) {
+      r.fillRect(0, 3 * T - baseSnowH, CONFIG.WIDTH, baseSnowH, CONFIG.COL.WHITE);
+    }
+
+    // Snow on floor edges (bottom of scene above HUD)
+    const floorSnowH = Math.floor(sp * 4);
+    if (floorSnowH > 0) {
+      r.fillRect(0, CONFIG.HEIGHT - 32 - floorSnowH, CONFIG.WIDTH, floorSnowH, CONFIG.COL.LIGHT_GREY);
+    }
+
+    // Snow on desk tops
+    const deskSnowH = Math.ceil(sp * 3);
+    if (deskSnowH > 0) {
+      for (const d of CONFIG.DESKS) {
+        r.fillRect(d.x * T - 2, d.y * T - deskSnowH, T * 2 + 4, deskSnowH, CONFIG.COL.WHITE);
+      }
+      // Leader desk
+      const ld = CONFIG.LEADER_DESK_POS;
+      r.fillRect(ld.x * T + 6, ld.y * T - deskSnowH, T * 2 + 4, deskSnowH, CONFIG.COL.WHITE);
+    }
+
+    // Blueish cold tint over entire scene
+    if (sp > 0.3) {
+      r.fillRectAlpha(0, 0, CONFIG.WIDTH, CONFIG.HEIGHT - 32, '#8899cc', (sp - 0.3) * 0.25);
+    }
+  }
 }
