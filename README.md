@@ -68,12 +68,14 @@ The main process periodically scans all session log files modified within the pa
 
 ### Quick Start
 
-**Windows (PowerShell):**
+**Windows:**
 ```powershell
 git clone <repository-url>
 cd cloffice-pixel
 powershell -ExecutionPolicy Bypass -File run.ps1
 ```
+
+Or just double-click `ClOffice Pixel.cmd` — it launches silently with no console window.
 
 **macOS / Linux:**
 ```bash
