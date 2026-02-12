@@ -159,6 +159,9 @@
     // Particles (on top)
     particles.draw(renderer);
 
+    // Snow accumulation (after scene + particles, before overlays)
+    office.drawSnow();
+
     // Dim overlay (after scene, before HUD)
     office.drawDimOverlay();
 

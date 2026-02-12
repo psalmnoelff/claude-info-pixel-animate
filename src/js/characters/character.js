@@ -13,6 +13,8 @@ class Character {
     this.visible = true;
     this.id = Character._nextId++;
     this.errorTimer = 0;
+    this.panicking = false;
+    this.freezeProgress = 0; // 0 = normal, 1 = fully frozen
   }
 
   static _nextId = 0;
@@ -148,6 +150,12 @@ class Character {
     this.animator.update(dt);
     if (this.errorTimer > 0) this.errorTimer -= dt;
 
+    // Freeze: pause movement when frozen
+    if (this.freezeProgress > 0.2 && this.tween && !this.tween.done) {
+      // Don't update tween - character is frozen in place
+      return;
+    }
+
     if (this.tween && !this.tween.done) {
       this.tween.update(dt);
       this.x = this.tween.currentX;
@@ -192,15 +200,39 @@ class Character {
       sprite = SpriteRenderer.get(spriteName);
     }
 
+    // Apply shiver offset when frozen
+    let drawX = this.x;
+    let drawY = this.y;
+    if (this.freezeProgress > 0.2) {
+      drawX += (Math.random() - 0.5) * 2 * this.freezeProgress;
+      drawY += (Math.random() - 0.5) * 1 * this.freezeProgress;
+    }
+
+    // Apply erratic head movement when panicking
+    if (this.panicking) {
+      drawX += (Math.random() - 0.5) * 2;
+      drawY += (Math.random() - 0.5) * 1;
+    }
+
     if (sprite) {
       if (!this.facingRight) {
-        renderer.drawImageFlipped(sprite, this.x, this.y);
+        renderer.drawImageFlipped(sprite, drawX, drawY);
       } else {
-        renderer.drawImage(sprite, this.x, this.y);
+        renderer.drawImage(sprite, drawX, drawY);
       }
     }
 
-    // Error overlay (smoke bubble + red eyes)
+    // Panic overlay (pale skin)
+    if (this.panicking) {
+      this._drawPanicOverlay(renderer, drawX, drawY);
+    }
+
+    // Freeze overlay (white frost on body)
+    if (this.freezeProgress > 0.2) {
+      this._drawFreezeOverlay(renderer, drawX, drawY);
+    }
+
+    // Error overlay (speech bubble + red eyes)
     if (this.errorTimer > 0) {
       this._drawErrorOverlay(renderer);
     }
@@ -237,6 +269,55 @@ class Character {
 
     // "!" symbol in red (centered in bubble)
     PixelFont.draw(renderer, '!!', bx + wobble + 3, by + 3, CONFIG.COL.RED);
+  }
+
+  _drawPanicOverlay(renderer, drawX, drawY) {
+    const cx = Math.floor(drawX);
+    const cy = Math.floor(drawY);
+
+    // Pale skin overlay (semi-transparent white over face area)
+    renderer.fillRectAlpha(cx + 4, cy + 3, 8, 6, '#fff', 0.35);
+
+    // Wide panicked eyes
+    renderer.pixel(cx + 6, cy + 5, CONFIG.COL.WHITE);
+    renderer.pixel(cx + 9, cy + 5, CONFIG.COL.WHITE);
+    renderer.pixel(cx + 6, cy + 4, CONFIG.COL.BLACK);
+    renderer.pixel(cx + 9, cy + 4, CONFIG.COL.BLACK);
+  }
+
+  _drawFreezeOverlay(renderer, drawX, drawY) {
+    const cx = Math.floor(drawX);
+    const cy = Math.floor(drawY);
+    const fp = this.freezeProgress;
+
+    // Frost overlay on body (white pixels, density proportional to freeze)
+    renderer.fillRectAlpha(cx + 2, cy + 2, 12, 12, '#fff', fp * 0.5);
+
+    // Ice crystal pixels scattered on the character
+    if (fp > 0.4) {
+      renderer.pixel(cx + 3, cy + 3, CONFIG.COL.WHITE);
+      renderer.pixel(cx + 11, cy + 5, CONFIG.COL.WHITE);
+      renderer.pixel(cx + 7, cy + 10, CONFIG.COL.LIGHT_GREY);
+    }
+    if (fp > 0.6) {
+      renderer.pixel(cx + 5, cy + 2, CONFIG.COL.WHITE);
+      renderer.pixel(cx + 10, cy + 8, CONFIG.COL.WHITE);
+      renderer.pixel(cx + 4, cy + 7, CONFIG.COL.LIGHT_GREY);
+      renderer.pixel(cx + 9, cy + 3, CONFIG.COL.WHITE);
+    }
+    if (fp > 0.8) {
+      // Nearly fully frozen - heavy frost
+      renderer.fillRectAlpha(cx + 3, cy + 1, 10, 3, '#c2c3c7', 0.4);
+      renderer.pixel(cx + 6, cy + 1, CONFIG.COL.WHITE);
+      renderer.pixel(cx + 8, cy + 12, CONFIG.COL.WHITE);
+    }
+
+    // Snow pile at feet
+    const pileH = Math.floor(fp * 4);
+    if (pileH > 0) {
+      renderer.fillRect(cx + 2, cy + 16 - pileH, 12, pileH, CONFIG.COL.WHITE);
+      renderer.fillRect(cx + 1, cy + 16 - Math.floor(pileH * 0.6), 14, Math.floor(pileH * 0.6), CONFIG.COL.LIGHT_GREY);
+    }
   }
 
   // Position for sitting at a desk (offset from desk tile)

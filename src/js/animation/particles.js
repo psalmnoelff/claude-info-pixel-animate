@@ -58,6 +58,37 @@ class ParticleSystem {
     }
   }
 
+  // Spawn a sweat drop near leader's head
+  spawnSweat(x, y) {
+    this.particles.push({
+      type: 'sweat',
+      x: x,
+      y: y,
+      life: 0.6,
+      maxLife: 0.6,
+      vx: (Math.random() - 0.5) * 8,
+      vy: 15 + Math.random() * 10,
+      color: CONFIG.COL.BLUE,
+    });
+  }
+
+  // Spawn a snow particle falling from the ceiling
+  spawnSnow(intensity) {
+    const x = Math.random() * CONFIG.WIDTH;
+    const y = -2;
+    const colors = [CONFIG.COL.WHITE, CONFIG.COL.LIGHT_GREY, CONFIG.COL.WHITE];
+    this.particles.push({
+      type: 'snow',
+      x: x,
+      y: y,
+      life: 8 + Math.random() * 4,
+      maxLife: 12,
+      vx: (Math.random() - 0.5) * 15 * intensity,
+      vy: 12 + Math.random() * 20 * intensity,
+      color: colors[Math.floor(Math.random() * colors.length)],
+    });
+  }
+
   update(dt) {
     for (let i = this.particles.length - 1; i >= 0; i--) {
       const p = this.particles[i];
@@ -77,6 +108,17 @@ class ParticleSystem {
         // Gentle float upward with wobble
         p.x += Math.sin(p.life * 3) * 0.3;
         p.y -= dt * 6;
+      } else if (p.type === 'snow') {
+        // Drift down with horizontal wobble
+        p.x += p.vx * dt + Math.sin(p.life * 2) * 0.5;
+        p.y += p.vy * dt;
+        // Kill when below floor
+        if (p.y > CONFIG.HEIGHT - 32) p.life = 0;
+      } else if (p.type === 'sweat') {
+        // Fall with slight gravity
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.vy += 30 * dt;
       } else {
         p.x += p.vx * dt;
         p.y += p.vy * dt;
@@ -95,6 +137,19 @@ class ParticleSystem {
       if (p.type === 'zzz') {
         // Draw Z character
         PixelFont.draw(renderer, p.char, p.x, p.y, p.color);
+      } else if (p.type === 'snow') {
+        // Snow flake (1-2px)
+        const px = Math.floor(p.x);
+        const py = Math.floor(p.y);
+        renderer.pixel(px, py, p.color);
+        if (Math.random() > 0.5) renderer.pixel(px + 1, py, p.color);
+      } else if (p.type === 'sweat') {
+        // Sweat drop (2px teardrop shape)
+        const px = Math.floor(p.x);
+        const py = Math.floor(p.y);
+        renderer.pixel(px, py, CONFIG.COL.BLUE);
+        renderer.pixel(px, py + 1, CONFIG.COL.BLUE);
+        renderer.pixel(px, py - 1, CONFIG.COL.WHITE);
       } else {
         // Draw sparkle pixel
         renderer.pixel(Math.floor(p.x), Math.floor(p.y), p.color);

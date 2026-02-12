@@ -199,7 +199,7 @@ class Worker extends Character {
     }
 
     // Phone walking behavior (vertical pacing on right side)
-    if (this.state === 'phone') {
+    if (this.state === 'phone' && this.freezeProgress <= 0.2) {
       this.y += this.phoneDir * CONFIG.WALK_SPEED * 0.5;
       this.facingRight = true;
       this.phoneTalkTimer += dt;
