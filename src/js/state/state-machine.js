@@ -163,6 +163,12 @@ class StateMachine {
       case STATES.THINKING:
         leader.stopMovement();
         leader.goToWhiteboard(this.whiteboard);
+        // Send existing workers to their desks so they aren't left frozen
+        for (const w of this.charMgr.workers) {
+          if (!w.isOverflow) {
+            w.goToDeskAndType();
+          }
+        }
         break;
 
       case STATES.DELEGATING: {
@@ -255,7 +261,6 @@ class StateMachine {
         leader.facingRight = true;
         leader.interrupted = true;
         for (const w of this.charMgr.workers) {
-          if (w.isOverflow) continue;
           w.stopMovement();
           w.setIdle();
           w.facingRight = true;
