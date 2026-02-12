@@ -16,8 +16,15 @@ class Office {
           // Wall area
           r.fillRect(col * T, row * T, T, T, CONFIG.COL.DARK_BLUE);
         } else {
-          // Floor - single shade carpet
+          // Floor - dark blue carpet with subtle grain
           r.fillRect(col * T, row * T, T, T, CONFIG.COL.DARK_BLUE);
+          const seed = (row * 31 + col * 17) % 97;
+          const gx = (seed * 7 + 3) % T;
+          const gy = (seed * 11 + 5) % T;
+          r.pixel(col * T + gx, row * T + gy, CONFIG.COL.BLACK);
+          const gx2 = (seed * 13 + 9) % T;
+          const gy2 = (seed * 5 + 1) % T;
+          r.pixel(col * T + gx2, row * T + gy2, CONFIG.COL.DARK_PURPLE);
         }
       }
     }
