@@ -205,6 +205,26 @@ function convertSessionEvent(raw) {
     // Stream-json format: { type: "system"|"assistant"|"user"|"result", ... }
 
     if (event.type === 'assistant' && event.message) {
+      const content = event.message.content || [];
+      const hasToolUse = content.some(b => b.type === 'tool_use');
+      const hasText = content.some(b => b.type === 'text' && b.text);
+
+      // Text-only assistant message (no tool calls) = turn complete
+      // Emit both the assistant event AND a result event
+      if (hasText && !hasToolUse) {
+        const assistantEvent = JSON.stringify({
+          type: 'assistant',
+          message: event.message
+        });
+        const resultEvent = JSON.stringify({
+          type: 'result',
+          result: '',
+          usage: event.message.usage || null
+        });
+        // Return both events separated by newline so both get processed
+        return assistantEvent + '\n' + resultEvent;
+      }
+
       return JSON.stringify({
         type: 'assistant',
         message: event.message
@@ -218,15 +238,13 @@ function convertSessionEvent(raw) {
       });
     }
 
-    // Result events in session logs have subType or specific markers
-    if (event.type === 'result' || (event.message && event.message.stop_reason === 'end_turn' && !event.message.content?.some(b => b.type === 'tool_use'))) {
-      if (event.message?.usage) {
-        return JSON.stringify({
-          type: 'result',
-          result: '',
-          usage: event.message.usage
-        });
-      }
+    // Explicit result events (from stream-json mode)
+    if (event.type === 'result') {
+      return JSON.stringify({
+        type: 'result',
+        result: '',
+        usage: event.message?.usage || event.usage || null
+      });
     }
 
     // System events
@@ -436,7 +454,11 @@ function startSessionWatcher() {
     for (const line of lines) {
       const converted = convertSessionEvent(line);
       if (converted) {
-        mainWindow?.webContents.send('claude:event', converted);
+        // convertSessionEvent may return multiple events separated by newlines
+        const events = converted.split('\n').filter(e => e.trim());
+        for (const evt of events) {
+          mainWindow?.webContents.send('claude:event', evt);
+        }
         hasNewEvents = true;
       }
     }
