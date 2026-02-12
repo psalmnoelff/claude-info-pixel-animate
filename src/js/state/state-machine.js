@@ -336,7 +336,8 @@ class StateMachine {
     this.workersExiting = true;
     this.workerExitQueue = [...workers];
     this.workerExitTimer = 0;
-    this.exitPhase = 'approaching'; // approaching, shooting, dying, next
+    this.exitPhase = 'approaching';
+    this.gunDrawn = false;
 
     // Stop all characters and begin the sequence
     const leader = this.charMgr.leader;
@@ -367,10 +368,17 @@ class StateMachine {
     leader.moveTo(target, CONFIG.MOVE_SPEED * 2.5, () => {
       // Face the worker
       leader.facingRight = worker.x > leader.x;
-      leader.setIdle();
-      // Brief pause before shooting
+      leader.state = 'idle';
       this.workerExitTimer = 0;
-      this.exitPhase = 'shooting';
+      if (!this.gunDrawn) {
+        // First worker: draw the shotgun
+        leader.setAnimation('leader_gun_draw');
+        this.exitPhase = 'gun_draw';
+      } else {
+        // Already drawn: cock and aim
+        leader.setAnimation('leader_gun_cock');
+        this.exitPhase = 'gun_cock';
+      }
     });
   }
 
@@ -401,6 +409,27 @@ class StateMachine {
     if (!this.workersExiting) return;
 
     this.workerExitTimer += dt;
+
+    const leader = this.charMgr.leader;
+
+    if (this.exitPhase === 'gun_draw' && this.workerExitTimer >= 0.5) {
+      this.workerExitTimer = 0;
+      leader.setAnimation('leader_gun_cock');
+      this.exitPhase = 'gun_cock';
+    }
+
+    if (this.exitPhase === 'gun_cock' && this.workerExitTimer >= 0.5) {
+      this.workerExitTimer = 0;
+      this.gunDrawn = true;
+      leader.setAnimation('leader_gun_aim');
+      this.exitPhase = 'gun_aim';
+    }
+
+    if (this.exitPhase === 'gun_aim' && this.workerExitTimer >= 0.3) {
+      this.workerExitTimer = 0;
+      leader.setAnimation('leader_gun_fire');
+      this.exitPhase = 'shooting';
+    }
 
     if (this.exitPhase === 'shooting' && this.workerExitTimer >= 0.15) {
       this._executeShot(this.currentExitTarget);
@@ -435,6 +464,7 @@ class StateMachine {
     this.workerExitTimer = 0;
     this.exitPhase = null;
     this.currentExitTarget = null;
+    this.gunDrawn = false;
   }
 
   // --- Planning Sequence (whiteboard -> pace -> pause -> repeat) ---

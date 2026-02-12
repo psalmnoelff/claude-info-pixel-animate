@@ -219,6 +219,34 @@ const WORKER_SIT_BODY = [].concat(
 const WORKER_SIT = replaceRows(WORKER_BACK.slice(), 16, WORKER_SIT_BODY);
 
 // ============================================================
+// Shotgun poses (leader front-facing, gun extends right)
+// ============================================================
+const GUN_LOWER = [].concat(                                                        // shared row 20 for gun-out poses
+  R(8, 1,T, 1,0, 5,1, 2,7, 3,1, 1,0, 1,15, 1,4, 1,0)                             // stock visible under gun
+);
+const LEADER_GUN_DRAW_0 = [].concat(
+  R(8, 1,15, 1,0, 5,1, 2,7, 5,1, 1,0),                                            // row 19: right hand absent (reaching behind)
+  R(8, 1,15, 1,0, 5,1, 2,7, 5,1, 1,0)                                             // row 20: same
+);
+const LEADER_GUN_DRAW_1 = [].concat(
+  R(7, 1,15, 1,4, 1,0, 5,1, 2,7, 2,1, 1,0, 1,15, 1,6, 3,5, 1,0),                 // row 19: gun pulled out, short barrel
+  GUN_LOWER                                                                         // row 20
+);
+const LEADER_GUN_COCK_0 = [].concat(
+  R(7, 1,15, 1,4, 1,0, 5,1, 2,7, 1,1, 1,6, 1,15, 1,0, 6,5, 1,0),                 // row 19: pump pulled back
+  GUN_LOWER                                                                         // row 20
+);
+const LEADER_GUN_COCK_1 = [].concat(
+  R(7, 1,15, 1,4, 1,0, 5,1, 2,7, 2,1, 1,0, 1,15, 1,6, 5,5, 1,0),                 // row 19: pump pushed forward
+  GUN_LOWER                                                                         // row 20
+);
+const LEADER_GUN_AIM = LEADER_GUN_COCK_1;                                           // aim = pump forward (ready)
+const LEADER_GUN_FIRE = [].concat(
+  R(7, 1,15, 1,4, 1,0, 5,1, 2,7, 2,1, 1,0, 1,15, 1,6, 5,5, 1,0, 2,10, 1,9),      // row 19: muzzle flash (yellow+orange)
+  GUN_LOWER                                                                         // row 20
+);
+
+// ============================================================
 // Draw pose (leader at whiteboard - FRONT facing, arm raised)
 // ============================================================
 const LEADER_DRAW_ARM_0 = [].concat(
@@ -286,6 +314,14 @@ SPRITES.leader_type_1 = shiftDown(LEADER_SIT);               // subtle lean forw
 SPRITES.leader_draw_0 = replaceRows(LEADER_FRONT.slice(), 19, LEADER_DRAW_ARM_0);
 SPRITES.leader_draw_1 = replaceRows(LEADER_FRONT.slice(), 19, LEADER_DRAW_ARM_1);
 SPRITES.leader_draw_2 = replaceRows(LEADER_FRONT.slice(), 19, LEADER_DRAW_ARM_2);
+
+// --- Leader shotgun poses (front view, gun extending right) ---
+SPRITES.leader_gun_draw_0 = replaceRows(LEADER_FRONT.slice(), 19, LEADER_GUN_DRAW_0);
+SPRITES.leader_gun_draw_1 = replaceRows(LEADER_FRONT.slice(), 19, LEADER_GUN_DRAW_1);
+SPRITES.leader_gun_cock_0 = replaceRows(LEADER_FRONT.slice(), 19, LEADER_GUN_COCK_0);
+SPRITES.leader_gun_cock_1 = replaceRows(LEADER_FRONT.slice(), 19, LEADER_GUN_COCK_1);
+SPRITES.leader_gun_aim = replaceRows(LEADER_FRONT.slice(), 19, LEADER_GUN_AIM);
+SPRITES.leader_gun_fire = replaceRows(LEADER_FRONT.slice(), 19, LEADER_GUN_FIRE);
 
 // --- Worker idle ---
 SPRITES.worker_idle_0 = WORKER_FRONT;

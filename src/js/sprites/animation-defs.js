@@ -28,6 +28,22 @@ const ANIMATIONS = {
     frames: ['leader_draw_0', 'leader_draw_1', 'leader_draw_2'],
     fps: 4
   },
+  leader_gun_draw: {
+    frames: ['leader_gun_draw_0', 'leader_gun_draw_1'],
+    fps: 4
+  },
+  leader_gun_cock: {
+    frames: ['leader_gun_cock_0', 'leader_gun_cock_1'],
+    fps: 4
+  },
+  leader_gun_aim: {
+    frames: ['leader_gun_aim'],
+    fps: 1
+  },
+  leader_gun_fire: {
+    frames: ['leader_gun_fire', 'leader_gun_aim'],
+    fps: 6
+  },
   worker_idle: {
     frames: ['worker_idle_0', 'worker_idle_1'],
     fps: 2
