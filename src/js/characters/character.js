@@ -70,9 +70,11 @@ class Character {
 
     const waypoints = [{ x: this.x, y: this.y }];
 
-    // Route through safe corridor above desks when either endpoint is in the desk zone
-    // and there's significant movement in any direction
-    const needsRouting = (dx > T || dy > T) && (startInDesks || endInDesks);
+    // Route through safe corridor when path crosses the desk zone
+    const pathMinY = Math.min(this.y, target.y);
+    const pathMaxY = Math.max(this.y, target.y);
+    const crossesDesks = pathMinY < DESK_ZONE_BOT && pathMaxY > DESK_ZONE_TOP;
+    const needsRouting = (dx > T || dy > T) && (startInDesks || endInDesks || crossesDesks);
 
     if (needsRouting) {
       const startTileX = Math.round(this.x / T);
