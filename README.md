@@ -12,16 +12,19 @@ ClOffice Pixel is an Electron desktop app that turns Claude Code's real-time act
 - **Animated pixel art office** -- a PICO-8-inspired scene with a leader character, up to 6 worker agents at desks, a whiteboard with structured diagrams, an animated door, and particle effects (ZZZ bubbles, typing sparkles, muzzle flashes).
 - **Scrolling code screens** -- PC monitors display scrolling lines of code with random color themes per desk (terminal green, light mode, blue/yellow, etc.). Screens go black when workers are sleeping.
 - **RPG-style HUD** -- four status bars track your 5-hour session budget, Sonnet quota, weekly all-model quota, and context window usage at a glance. Click any bar for a description.
-- **Event-driven state machine** -- Claude's tool calls (Edit, Bash, Read, Task, etc.) are classified into distinct visual states: Idle, Thinking, Delegating, Coding, Planning, Multi-Agent, and Done.
+- **Event-driven state machine** -- Claude's tool calls (Edit, Bash, Read, Task, etc.) are classified into distinct visual states: Idle, Thinking, Delegating, Coding, Planning, Multi-Agent, and Done. The DONE transition is debounced by 3 seconds to prevent flickering during multi-turn tasks.
+- **Git commit celebration** -- detects `git commit` commands in Bash tool calls and triggers a confetti particle burst with a HUD message showing the commit summary.
 - **Multi-agent support** -- when Claude spawns sub-agents via the Task tool, new color-tinted worker characters walk through the office door and sit at desks. Beyond 6 agents, overflow workers pace vertically on the right side of the office talking on phones.
 - **Incident monitoring** -- office windows show animated fire effects when Claude has active status incidents. Click a window to view incident details with links.
 - **Worker exit sequence** -- when transitioning from Done to Idle, the leader character walks to each worker with a shotgun animation to dismiss them.
 - **Lights-out sequence** -- after extended idle time, the leader exits through the door and the office dims.
 - **Janitor sequence** -- when context is compacted, a janitor character enters and cleans the whiteboard.
+- **Dynamic day/night windows** -- office windows show a real-time sky that transitions between twinkling stars at night and drifting clouds during the day, with layered sunrise/sunset glow during transitions.
+- **Wall clock** -- an analog clock above the door displays the real system time with hour, minute, and second hands.
 - **Retro frame** -- the viewport is wrapped in a white border with black padding for a classic retro game look.
 - **Always-on-top mode** -- pin the window above other apps to keep an eye on your session while you work.
 - **Demo mode** -- cycle through all visual states automatically to preview every animation.
-- **Settings overlay** -- toggle listening, launch sessions, enable always-on-top, and start demos from a single screen.
+- **Settings overlay** -- toggle listening, launch sessions, enable always-on-top, start demos, and trigger test effects from a single screen.
 - **Custom pixel art icon** -- the app icon is the leader character's face, generated from sprite data via `node scripts/generate-icon.js`.
 - **No external assets** -- all 32x32 sprites are defined as JavaScript arrays using a 16-color palette. The entire app is pure vanilla JS with no frameworks.
 
@@ -52,7 +55,7 @@ The `EventClassifier` inspects each event and triggers state transitions:
 | Delegating | First `Task` tool call (no workers yet) | --> DELEGATING |
 | Multi-Agent | Subsequent `Task` tool calls (workers exist) | --> MULTI_AGENT |
 | Planning | EnterPlanMode or ExitPlanMode tool calls | --> PLANNING |
-| Done | A `result` event arrives | --> DONE |
+| Done | A `result` event arrives (3s debounce) | --> DONE |
 
 ### Usage Tracking
 
@@ -300,7 +303,7 @@ cloffice-pixel/
       animation/
         tween.js                       # Linear interpolation for smooth character movement
         animator.js                    # Per-character frame cycling
-        particles.js                   # Particle effects (ZZZ bubbles, typing sparkles, muzzle flashes)
+        particles.js                   # Particle effects (ZZZ bubbles, typing sparkles, muzzle flashes, confetti)
       sprites/
         sprite-data.js                 # Raw pixel data for 16x16 sprites
         sprite-data-32.js              # Raw pixel data for 32x32 sprites (characters, doors)
