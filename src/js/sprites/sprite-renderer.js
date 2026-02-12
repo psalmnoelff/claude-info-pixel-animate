@@ -34,6 +34,32 @@ class SpriteRenderer {
     return out;
   }
 
+  // Sub-pixel outline: adds a dark border around character silhouettes in the
+  // scaled 32x32 output. Transparent pixels adjacent to any colored pixel become
+  // dark outline (color 0 = black). Creates a visible anti-aliased edge.
+  static _addSubPixelOutline(data, w, h) {
+    const out = new Int8Array(data.length);
+    out.set(data);
+
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const i = y * w + x;
+        if (data[i] >= 0) continue; // Skip non-transparent pixels
+
+        // Check 4-connected neighbors for any colored pixel
+        const up    = y > 0     ? data[(y - 1) * w + x] : -1;
+        const down  = y < h - 1 ? data[(y + 1) * w + x] : -1;
+        const left  = x > 0     ? data[y * w + x - 1]   : -1;
+        const right = x < w - 1 ? data[y * w + x + 1]   : -1;
+
+        if (up >= 0 || down >= 0 || left >= 0 || right >= 0) {
+          out[i] = 0; // Black outline
+        }
+      }
+    }
+    return out;
+  }
+
   // Render a sprite data array to an offscreen canvas and cache it
   static render(name) {
     if (SpriteRenderer.cache[name]) return SpriteRenderer.cache[name];
@@ -56,10 +82,11 @@ class SpriteRenderer {
         ctx.fillRect(i % 32, Math.floor(i / 32), 1, 1);
       }
     } else {
-      // 16x16 source: apply Scale2x for smooth upscale
+      // 16x16 source: apply Scale2x + sub-pixel outline for smooth upscale
       const scaled = SpriteRenderer._scale2x(data, 16, 16);
+      const outlined = SpriteRenderer._addSubPixelOutline(scaled, 32, 32);
       for (let i = 0; i < 1024; i++) {
-        const colorIdx = scaled[i];
+        const colorIdx = outlined[i];
         if (colorIdx < 0) continue;
         ctx.fillStyle = CONFIG.PALETTE[colorIdx];
         ctx.fillRect(i % 32, Math.floor(i / 32), 1, 1);
@@ -113,11 +140,11 @@ class SpriteRenderer {
         ctx.fillRect(i % 32, Math.floor(i / 32), 1, 1);
       }
     } else {
-      // Apply Scale2x then tint
+      // Apply Scale2x + outline then tint
       const scaled = SpriteRenderer._scale2x(data, 16, 16);
-      // Map scaled palette indices to tinted CSS colors
+      const outlined = SpriteRenderer._addSubPixelOutline(scaled, 32, 32);
       for (let i = 0; i < 1024; i++) {
-        const colorIdx = scaled[i];
+        const colorIdx = outlined[i];
         if (colorIdx < 0) continue;
         ctx.fillStyle = resolveColor(colorIdx);
         ctx.fillRect(i % 32, Math.floor(i / 32), 1, 1);

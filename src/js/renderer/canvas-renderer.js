@@ -25,10 +25,13 @@ class CanvasRenderer {
     const winW = window.innerWidth;
     const winH = window.innerHeight;
 
-    // Integer scale that fits the window
-    const scaleX = Math.floor(winW / CONFIG.WIDTH) || 1;
-    const scaleY = Math.floor(winH / CONFIG.HEIGHT) || 1;
-    this.scale = Math.min(scaleX, scaleY);
+    // Integer scale that fits the window, snapped to multiples of PIXEL_SCALE
+    // so the 2x buffer maps cleanly to display pixels (no nearest-neighbor mangling)
+    const S = CONFIG.PIXEL_SCALE;
+    const rawScaleX = Math.floor(winW / CONFIG.WIDTH) || 1;
+    const rawScaleY = Math.floor(winH / CONFIG.HEIGHT) || 1;
+    const rawScale = Math.min(rawScaleX, rawScaleY);
+    this.scale = Math.max(S, rawScale - (rawScale % S));
 
     const scaledW = CONFIG.WIDTH * this.scale;
     const scaledH = CONFIG.HEIGHT * this.scale;
