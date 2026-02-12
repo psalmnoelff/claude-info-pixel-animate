@@ -46,7 +46,7 @@ class StatusPopup {
             <div style="color: #c2c3c7; font-size: 11px; white-space: pre-wrap; line-height: 1.4;">
               ${this._sanitizeHtml(inc.description || 'No details.')}
             </div>
-            ${inc.link ? `<a href="#" onclick="event.preventDefault();" style="color: #29adff; font-size: 10px; text-decoration: underline; cursor: default; pointer-events: none;">
+            ${inc.link ? `<a href="#" data-url="${this._escapeHtml(inc.link)}" class="incident-link" style="color: #29adff; font-size: 10px; text-decoration: underline; cursor: pointer;">
               ${this._escapeHtml(inc.link)}
             </a>` : ''}
           </div>
@@ -80,6 +80,17 @@ class StatusPopup {
     this.overlay.querySelector('#status-popup-close').addEventListener('click', () => {
       this.hide();
     });
+
+    // Wire up incident links to open in default browser
+    for (const link of this.overlay.querySelectorAll('.incident-link')) {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const url = link.getAttribute('data-url');
+        if (url && window.appWindow && window.appWindow.openExternal) {
+          window.appWindow.openExternal(url);
+        }
+      });
+    }
   }
 
   _escapeHtml(str) {
