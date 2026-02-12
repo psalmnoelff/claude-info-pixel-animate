@@ -39,6 +39,7 @@ class AppState {
     // Screen effects
     this.screenShakeTimer = 0;
     this.screenFlashTimer = 0;
+    this.screenFlashColor = '#ffffff';
   }
 
   // Update from computed usage data (from main process scanning session logs)

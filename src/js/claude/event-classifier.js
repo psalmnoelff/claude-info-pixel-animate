@@ -4,6 +4,8 @@ class EventClassifier {
     this.stateMachine = stateMachine;
     this.tokenTracker = tokenTracker;
     this.activeToolUses = new Map(); // track tool_use_id → tool_name
+    this._doneTimer = null;
+    this.onGitCommit = null; // callback(message)
   }
 
   // Coding tools - trigger CODING state
@@ -25,6 +27,13 @@ class EventClassifier {
   // Process a parsed event and trigger state transitions
   classify(event) {
     this.stateMachine.signalActivity();
+
+    // Cancel pending DONE transition on any new activity
+    if (this._doneTimer) {
+      clearTimeout(this._doneTimer);
+      this._doneTimer = null;
+    }
+
     const type = StreamParser.getEventType(event);
 
     switch (type) {
@@ -73,13 +82,16 @@ class EventClassifier {
       }
 
       case 'result': {
-        // Session complete
         const usage = StreamParser.getUsage(event);
         if (usage) {
           this.tokenTracker.processUsage(usage);
         }
-        this.stateMachine.transition(STATES.DONE);
-        this.activeToolUses.clear();
+        // Debounce DONE - wait 3s before transitioning to avoid flickering
+        this._doneTimer = setTimeout(() => {
+          this._doneTimer = null;
+          this.stateMachine.transition(STATES.DONE);
+          this.activeToolUses.clear();
+        }, 3000);
         break;
       }
     }
@@ -87,6 +99,15 @@ class EventClassifier {
 
   _handleToolUse(toolUse) {
     const name = toolUse.name;
+
+    // Detect git commits in Bash commands
+    if (name === 'Bash' && toolUse.input?.command) {
+      const cmd = toolUse.input.command;
+      if (cmd.includes('git commit')) {
+        const msg = this._extractCommitMessage(cmd);
+        if (this.onGitCommit) this.onGitCommit(msg);
+      }
+    }
 
     if (EventClassifier.PLANNING_TOOLS.has(name)) {
       this.stateMachine.transition(STATES.PLANNING);
@@ -123,8 +144,25 @@ class EventClassifier {
     }
   }
 
+  _extractCommitMessage(cmd) {
+    // HEREDOC style: git commit -m "$(cat <<'EOF'\nmessage\n..."
+    const heredocMatch = cmd.match(/cat\s*<<'?EOF'?\n([\s\S]*?)\n\s*EOF/);
+    if (heredocMatch) {
+      const firstLine = heredocMatch[1].trim().split('\n')[0].trim();
+      if (firstLine) return firstLine;
+    }
+    // Standard: git commit -m "message" or -m 'message'
+    const match = cmd.match(/git\s+commit.*?-m\s+["']([^"'\n]+)/);
+    if (match) return match[1];
+    return 'code committed';
+  }
+
   // Reset tracking
   reset() {
     this.activeToolUses.clear();
+    if (this._doneTimer) {
+      clearTimeout(this._doneTimer);
+      this._doneTimer = null;
+    }
   }
 }

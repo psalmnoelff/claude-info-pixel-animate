@@ -105,6 +105,20 @@
     settings.updateSessionList(sessions);
   };
 
+  // Git commit celebration
+  eventClassifier.onGitCommit = (msg) => {
+    // Green screen flash
+    appState.screenFlashTimer = 0.3;
+    appState.screenFlashColor = '#00e436';
+    // HUD message
+    const shortMsg = msg.length > 24 ? msg.substring(0, 24) + '..' : msg;
+    hud.flashMessage('COMMIT: ' + shortMsg);
+    // Confetti burst from leader
+    const lx = charMgr.leader.x + 8;
+    const ly = charMgr.leader.y;
+    particles.spawnConfetti(lx, ly);
+  };
+
   // Auto-start listening for active Claude Code sessions
   connector.watch();
 
@@ -208,11 +222,11 @@
     // HUD
     hud.draw();
 
-    // Screen flash overlay (white flash that fades)
+    // Screen flash overlay (fades out, color configurable)
     if (appState.screenFlashTimer > 0) {
       appState.screenFlashTimer -= 1 / 60;
       const alpha = Math.min(1, appState.screenFlashTimer / 0.1) * 0.8;
-      renderer.fillRectAlpha(0, 0, CONFIG.WIDTH, CONFIG.HEIGHT, '#ffffff', alpha);
+      renderer.fillRectAlpha(0, 0, CONFIG.WIDTH, CONFIG.HEIGHT, appState.screenFlashColor, alpha);
     }
 
     // Screen shake

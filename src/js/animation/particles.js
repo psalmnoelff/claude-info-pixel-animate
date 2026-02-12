@@ -72,6 +72,25 @@ class ParticleSystem {
     });
   }
 
+  // Spawn confetti burst (for git commits)
+  spawnConfetti(x, y) {
+    const colors = [CONFIG.COL.GREEN, CONFIG.COL.YELLOW, CONFIG.COL.WHITE, CONFIG.COL.BLUE, CONFIG.COL.PINK];
+    for (let i = 0; i < 24; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 25 + Math.random() * 50;
+      this.particles.push({
+        type: 'confetti',
+        x: x + Math.random() * 8 - 4,
+        y: y + Math.random() * 8 - 4,
+        life: 1.2 + Math.random() * 1.0,
+        maxLife: 2.2,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - 35,
+        color: colors[Math.floor(Math.random() * colors.length)],
+      });
+    }
+  }
+
   // Spawn a snow particle falling from the ceiling
   spawnSnow(intensity) {
     const x = Math.random() * CONFIG.WIDTH;
@@ -114,6 +133,11 @@ class ParticleSystem {
         p.y += p.vy * dt;
         // Kill when below floor
         if (p.y > CONFIG.HEIGHT - 32) p.life = 0;
+      } else if (p.type === 'confetti') {
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.vy += 40 * dt; // gravity
+        p.vx *= 0.99; // air resistance
       } else if (p.type === 'sweat') {
         // Fall with slight gravity
         p.x += p.vx * dt;
@@ -150,6 +174,12 @@ class ParticleSystem {
         renderer.pixel(px, py, CONFIG.COL.BLUE);
         renderer.pixel(px, py + 1, CONFIG.COL.BLUE);
         renderer.pixel(px, py - 1, CONFIG.COL.WHITE);
+      } else if (p.type === 'confetti') {
+        // Draw confetti as 2px square
+        const px = Math.floor(p.x);
+        const py = Math.floor(p.y);
+        renderer.pixel(px, py, p.color);
+        renderer.pixel(px + 1, py, p.color);
       } else {
         // Draw sparkle pixel
         renderer.pixel(Math.floor(p.x), Math.floor(p.y), p.color);
