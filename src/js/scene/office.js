@@ -10,30 +10,14 @@ class Office {
     const r = this.renderer;
     const T = CONFIG.TILE;
 
-    // Carpet colors for seeded noise pattern
-    const carpetColors = [CONFIG.COL.DARK_BLUE, CONFIG.COL.BLUE, CONFIG.COL.INDIGO, CONFIG.COL.DARK_PURPLE];
-
     for (let row = 0; row < CONFIG.ROWS; row++) {
       for (let col = 0; col < CONFIG.COLS; col++) {
         if (row < 2) {
           // Wall area
           r.fillRect(col * T, row * T, T, T, CONFIG.COL.DARK_BLUE);
         } else {
-          // Floor - seeded pseudo-random blue-tone carpet
-          const seed = (row * 31 + col * 17) % 97;
-          const dominant = seed < 45 ? CONFIG.COL.DARK_BLUE
-                         : seed < 75 ? CONFIG.COL.BLUE
-                         : seed < 90 ? CONFIG.COL.INDIGO
-                                     : CONFIG.COL.DARK_PURPLE;
-          r.fillRect(col * T, row * T, T, T, dominant);
-
-          // 2-3 accent pixels per tile for texture
-          for (let i = 0; i < 3; i++) {
-            const px = (seed * (i + 3) * 7 + i * 13) % T;
-            const py = (seed * (i + 5) * 11 + i * 7) % T;
-            const accentIdx = (seed + i * 23) % carpetColors.length;
-            r.pixel(col * T + px, row * T + py, carpetColors[accentIdx]);
-          }
+          // Floor - single shade carpet
+          r.fillRect(col * T, row * T, T, T, CONFIG.COL.INDIGO);
         }
       }
     }
