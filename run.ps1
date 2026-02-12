@@ -6,6 +6,7 @@ $ErrorActionPreference = "Stop"
 # Check for Node.js
 if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
     Write-Host "Node.js is required. Install from https://nodejs.org/" -ForegroundColor Red
+    Read-Host "Press Enter to exit"
     exit 1
 }
 
@@ -15,6 +16,6 @@ if (-not (Test-Path "$PSScriptRoot\node_modules")) {
     npm install --prefix "$PSScriptRoot"
 }
 
-# Launch
-Write-Host "Starting ClOffice Pixel..." -ForegroundColor Green
-npm start --prefix "$PSScriptRoot"
+# Launch Electron detached and exit (no lingering PowerShell window)
+$electron = Join-Path $PSScriptRoot "node_modules\.bin\electron.cmd"
+Start-Process -FilePath $electron -ArgumentList "`"$PSScriptRoot`"" -WindowStyle Hidden
