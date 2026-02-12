@@ -12,8 +12,8 @@ class FireStatus {
 
     // Two window inner panes: left and right (matches office.js window positions)
     this.windows = [
-      { x: 31, y: 5, w: 18, h: 16 },  // left inner pane
-      { x: 223, y: 5, w: 18, h: 16 }, // right inner pane
+      { x: 31, y: 16, w: 18, h: 16 },  // left inner pane
+      { x: 223, y: 16, w: 18, h: 16 }, // right inner pane
     ];
 
     // Fire buffers (classic pixel fire algorithm)
@@ -33,8 +33,8 @@ class FireStatus {
 
     // Click regions (full window frame areas for hit-testing)
     this.clickRegions = [
-      { x: 29, y: 3, w: 22, h: 20 },
-      { x: 221, y: 3, w: 22, h: 20 },
+      { x: 29, y: 14, w: 22, h: 20 },
+      { x: 221, y: 14, w: 22, h: 20 },
     ];
 
     // Alarm timer for flashing indicators
@@ -137,10 +137,10 @@ class FireStatus {
 
     // 4 alarm boxes at ceiling corners (below wall line, above baseboard)
     const positions = [
-      { x: 2, y: 2 * T - 4 },
-      { x: CONFIG.WIDTH - 5, y: 2 * T - 4 },
-      { x: 70, y: 2 * T - 4 },
-      { x: CONFIG.WIDTH - 72, y: 2 * T - 4 },
+      { x: 2, y: 3 * T - 4 },
+      { x: CONFIG.WIDTH - 5, y: 3 * T - 4 },
+      { x: 70, y: 3 * T - 4 },
+      { x: CONFIG.WIDTH - 72, y: 3 * T - 4 },
     ];
 
     for (const pos of positions) {

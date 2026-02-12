@@ -1,3 +1,15 @@
+// Screen color themes: [background, text]
+const SCREEN_THEMES = [
+  [CONFIG.COL.BLACK, CONFIG.COL.GREEN],        // terminal green
+  [CONFIG.COL.WHITE, CONFIG.COL.BLACK],         // light mode
+  [CONFIG.COL.DARK_BLUE, CONFIG.COL.YELLOW],   // blue/yellow
+  [CONFIG.COL.BLACK, CONFIG.COL.BLUE],          // blue on black
+  [CONFIG.COL.DARK_PURPLE, CONFIG.COL.PEACH],   // purple/peach
+  [CONFIG.COL.BLACK, CONFIG.COL.WHITE],         // white on black
+  [CONFIG.COL.DARK_GREEN, CONFIG.COL.GREEN],    // matrix
+  [CONFIG.COL.DARK_BLUE, CONFIG.COL.LIGHT_GREY], // IDE dark
+];
+
 class Desk {
   constructor(renderer, tileX, tileY, index, wide) {
     this.renderer = renderer;
@@ -8,33 +20,48 @@ class Desk {
     this.screenGlow = 0; // 0-1 glow intensity
     this.glowTimer = Math.random() * Math.PI * 2;
     this.occupied = false;
-    this.screenColor = CONFIG.COL.BLUE;
-    this.screenColorTimer = 0;
+    this.sleeping = false;
     this.chairOffset = 0;   // 0 = pushed in, 5 = pulled back
     this.chairTarget = 0;
+
+    // Random screen color theme per desk
+    const theme = SCREEN_THEMES[Math.floor(Math.random() * SCREEN_THEMES.length)];
+    this.screenBg = theme[0];
+    this.screenFg = theme[1];
+
+    // Generate random code lines for scrolling effect
+    this.codeLines = this._generateCodeLines(24);
+    this.scrollOffset = 0;
+    // Second set for wide desk right monitor
+    if (this.wide) {
+      this.codeLinesR = this._generateCodeLines(24);
+    }
+  }
+
+  _generateCodeLines(count) {
+    const lines = [];
+    for (let i = 0; i < count; i++) {
+      if (Math.random() < 0.15) {
+        lines.push(null); // blank line
+      } else {
+        const indent = Math.floor(Math.random() * 3);
+        const len = 1 + Math.floor(Math.random() * (7 - indent));
+        lines.push({ indent, len });
+      }
+    }
+    return lines;
   }
 
   update(dt) {
-    if (this.occupied) {
+    if (this.sleeping) {
+      this.screenGlow = 0;
+    } else if (this.occupied) {
       this.glowTimer += dt * 3;
       this.screenGlow = 0.5 + 0.5 * Math.sin(this.glowTimer);
-
-      // Cycle screen color to simulate code changes
-      this.screenColorTimer += dt;
-      if (this.screenColorTimer > 0.4) {
-        this.screenColorTimer = 0;
-        const brightColors = [
-          CONFIG.COL.BLUE, CONFIG.COL.GREEN, CONFIG.COL.RED,
-          CONFIG.COL.ORANGE, CONFIG.COL.YELLOW, CONFIG.COL.PINK,
-          CONFIG.COL.WHITE, CONFIG.COL.LIGHT_GREY, CONFIG.COL.INDIGO,
-          CONFIG.COL.PEACH, CONFIG.COL.DARK_GREEN, CONFIG.COL.DARK_PURPLE,
-        ];
-        this.screenColor = brightColors[Math.floor(Math.random() * brightColors.length)];
-      }
+      // Scroll code lines upward
+      this.scrollOffset += dt * 3;
     } else {
       this.screenGlow = 0;
-      this.screenColor = CONFIG.COL.BLUE;
-      this.screenColorTimer = 0;
     }
 
     // Chair push-in/pull-back animation
@@ -59,12 +86,26 @@ class Desk {
     }
   }
 
+  // Draw code lines scrolling on a screen area
+  _drawCodeScreen(r, sx, sy, sw, sh, lines) {
+    r.fillRect(sx, sy, sw, sh, this.screenBg);
+    const startLine = Math.floor(this.scrollOffset);
+    for (let row = 0; row < sh; row++) {
+      const lineIdx = (startLine + row) % lines.length;
+      const line = lines[lineIdx];
+      if (!line) continue;
+      const len = Math.min(line.len, sw - line.indent);
+      if (len > 0) {
+        r.fillRect(sx + line.indent, sy + row, len, 1, this.screenFg);
+      }
+    }
+  }
+
   _drawNormal() {
     const r = this.renderer;
     const T = CONFIG.TILE;
     const px = this.tileX * T - 4; // center 24px desk on 16px tile
     const py = this.tileY * T;
-    const sc = this.occupied ? this.screenColor : CONFIG.COL.BLUE;
 
     // Desk frame (black outline with rounded corners)
     r.fillRect(px + 1, py + 1, 22, T - 2, CONFIG.COL.BLACK);
@@ -76,7 +117,13 @@ class Desk {
 
     // Monitor (centered)
     r.fillRect(px + 7, py, 10, 7, CONFIG.COL.DARK_GREY);
-    r.fillRect(px + 8, py + 1, 8, 5, sc);
+    if (this.sleeping) {
+      r.fillRect(px + 8, py + 1, 8, 5, CONFIG.COL.BLACK);
+    } else if (this.occupied) {
+      this._drawCodeScreen(r, px + 8, py + 1, 8, 5, this.codeLines);
+    } else {
+      r.fillRect(px + 8, py + 1, 8, 5, CONFIG.COL.BLUE);
+    }
 
     // Keyboard (rounded outline)
     r.fillRect(px + 8, py + 8, 7, 3, CONFIG.COL.DARK_GREY);
@@ -89,22 +136,21 @@ class Desk {
     // Mouse (right of keyboard)
     r.fillRect(px + 18, py + 9, 2, 2, CONFIG.COL.LIGHT_GREY);
 
-    // Screen glow when occupied
-    if (this.screenGlow > 0.3 && this.occupied) {
-      r.pixel(px + 10, py - 1, sc);
-      r.pixel(px + 11, py - 1, sc);
-      r.pixel(px + 12, py - 1, sc);
-      r.pixel(px + 13, py - 1, sc);
+    // Screen glow when occupied and not sleeping
+    if (this.screenGlow > 0.3 && this.occupied && !this.sleeping) {
+      r.pixel(px + 10, py - 1, this.screenFg);
+      r.pixel(px + 11, py - 1, this.screenFg);
+      r.pixel(px + 12, py - 1, this.screenFg);
+      r.pixel(px + 13, py - 1, this.screenFg);
     }
   }
 
   _drawWide() {
     const r = this.renderer;
     const T = CONFIG.TILE;
-    const px = this.tileX * T;
+    const px = this.tileX * T + 8; // offset to center 32px desk on middle column
     const py = this.tileY * T;
     const w = T * 2; // 2 tiles wide
-    const sc = this.occupied ? this.screenColor : CONFIG.COL.BLUE;
 
     // Desk frame (black outline with rounded corners)
     r.fillRect(px + 1, py + 1, w - 2, T - 2, CONFIG.COL.BLACK);
@@ -114,13 +160,25 @@ class Desk {
     // Desk edge highlight
     r.fillRect(px + 1, py + 2, w - 2, 1, CONFIG.COL.ORANGE);
 
-    // Left monitor (larger)
+    // Left monitor
     r.fillRect(px + 2, py, 10, 7, CONFIG.COL.DARK_GREY);
-    r.fillRect(px + 3, py + 1, 8, 5, sc);
+    if (this.sleeping) {
+      r.fillRect(px + 3, py + 1, 8, 5, CONFIG.COL.BLACK);
+    } else if (this.occupied) {
+      this._drawCodeScreen(r, px + 3, py + 1, 8, 5, this.codeLines);
+    } else {
+      r.fillRect(px + 3, py + 1, 8, 5, CONFIG.COL.BLUE);
+    }
 
-    // Right monitor (larger)
+    // Right monitor
     r.fillRect(px + T + 4, py, 10, 7, CONFIG.COL.DARK_GREY);
-    r.fillRect(px + T + 5, py + 1, 8, 5, sc);
+    if (this.sleeping) {
+      r.fillRect(px + T + 5, py + 1, 8, 5, CONFIG.COL.BLACK);
+    } else if (this.occupied) {
+      this._drawCodeScreen(r, px + T + 5, py + 1, 8, 5, this.codeLinesR);
+    } else {
+      r.fillRect(px + T + 5, py + 1, 8, 5, CONFIG.COL.BLUE);
+    }
 
     // Keyboard (rounded outline)
     r.fillRect(px + 12, py + 8, 7, 3, CONFIG.COL.DARK_GREY);
@@ -133,16 +191,16 @@ class Desk {
     // Mouse (right of keyboard)
     r.fillRect(px + 21, py + 9, 2, 2, CONFIG.COL.LIGHT_GREY);
 
-    // Screen glow when occupied
-    if (this.screenGlow > 0.3 && this.occupied) {
+    // Screen glow when occupied and not sleeping
+    if (this.screenGlow > 0.3 && this.occupied && !this.sleeping) {
       // Left monitor glow
-      r.pixel(px + 5, py - 1, sc);
-      r.pixel(px + 6, py - 1, sc);
-      r.pixel(px + 7, py - 1, sc);
+      r.pixel(px + 5, py - 1, this.screenFg);
+      r.pixel(px + 6, py - 1, this.screenFg);
+      r.pixel(px + 7, py - 1, this.screenFg);
       // Right monitor glow
-      r.pixel(px + T + 7, py - 1, sc);
-      r.pixel(px + T + 8, py - 1, sc);
-      r.pixel(px + T + 9, py - 1, sc);
+      r.pixel(px + T + 7, py - 1, this.screenFg);
+      r.pixel(px + T + 8, py - 1, this.screenFg);
+      r.pixel(px + T + 9, py - 1, this.screenFg);
     }
   }
 
@@ -152,7 +210,7 @@ class Desk {
     const T = CONFIG.TILE;
     let px = this.tileX * T;
     if (this.wide) {
-      px = this.tileX * T + T / 2; // center on 2-tile wide desk
+      px = this.tileX * T + T; // align with middle column worker chairs
     }
     const py = (this.tileY + 1) * T - 3 + Math.round(this.chairOffset);
 

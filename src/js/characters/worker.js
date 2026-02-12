@@ -70,13 +70,14 @@ class Worker extends Character {
     });
   }
 
-  // Start phone-walking in the overflow area (front of office)
+  // Start phone-walking in the overflow area (right side, vertical pacing)
   startPhoneWalk() {
     this.state = 'phone';
     this.setAnimation('worker_phone');
+    this.x = CONFIG.OVERFLOW_X + (Math.random() * 8 - 4);
     this.y = CONFIG.OVERFLOW_Y_MIN + Math.random() * (CONFIG.OVERFLOW_Y_MAX - CONFIG.OVERFLOW_Y_MIN);
-    this.phoneDir = Math.random() > 0.5 ? 1 : -1;
-    this.facingRight = this.phoneDir > 0;
+    this.phoneDir = Math.random() > 0.5 ? 1 : -1; // +1 = down, -1 = up
+    this.facingRight = true;
   }
 
   // Leave through door
@@ -197,20 +198,17 @@ class Worker extends Character {
       }
     }
 
-    // Phone walking behavior (pacing back and forth)
+    // Phone walking behavior (vertical pacing on right side)
     if (this.state === 'phone') {
-      this.x += this.phoneDir * CONFIG.WALK_SPEED * 0.5;
-      this.facingRight = this.phoneDir > 0;
+      this.y += this.phoneDir * CONFIG.WALK_SPEED * 0.5;
+      this.facingRight = true;
       this.phoneTalkTimer += dt;
 
-      // Bounce at edges (stop before leader desk area on the right)
-      const rightLimit = CONFIG.LEADER_DESK_POS.x * CONFIG.TILE - 8;
-      if (this.x < 8) {
+      // Bounce at vertical edges
+      if (this.y < CONFIG.OVERFLOW_Y_MIN) {
         this.phoneDir = 1;
-        this.facingRight = true;
-      } else if (this.x > rightLimit) {
+      } else if (this.y > CONFIG.OVERFLOW_Y_MAX) {
         this.phoneDir = -1;
-        this.facingRight = false;
       }
     }
   }

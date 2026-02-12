@@ -30,21 +30,25 @@ class GameLoop {
   _loop() {
     if (!this.running) return;
 
-    const now = performance.now() / 1000;
-    let dt = now - this.lastTime;
-    this.lastTime = now;
+    try {
+      const now = performance.now() / 1000;
+      let dt = now - this.lastTime;
+      this.lastTime = now;
 
-    // Clamp large gaps (e.g., tab was hidden)
-    if (dt > 0.25) dt = 0.25;
+      // Clamp large gaps (e.g., tab was hidden)
+      if (dt > 0.25) dt = 0.25;
 
-    this.accumulator += dt;
+      this.accumulator += dt;
 
-    while (this.accumulator >= this.timestep) {
-      this.update(this.timestep);
-      this.accumulator -= this.timestep;
+      while (this.accumulator >= this.timestep) {
+        this.update(this.timestep);
+        this.accumulator -= this.timestep;
+      }
+
+      this.draw();
+    } catch (e) {
+      console.error('Game loop error:', e);
     }
-
-    this.draw();
 
     this.rafId = requestAnimationFrame(() => this._loop());
   }
