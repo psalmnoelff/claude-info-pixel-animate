@@ -107,9 +107,6 @@
 
   // Git commit celebration
   eventClassifier.onGitCommit = (msg) => {
-    // Green screen flash
-    appState.screenFlashTimer = 0.3;
-    appState.screenFlashColor = '#00e436';
     // HUD message
     const shortMsg = msg.length > 24 ? msg.substring(0, 24) + '..' : msg;
     hud.flashMessage('COMMIT: ' + shortMsg);
