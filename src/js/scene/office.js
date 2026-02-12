@@ -118,10 +118,10 @@ class Office {
     const glowIntensity = dp * (1 - dp) * 4;
     if (glowIntensity > 0.05) {
       // Warm tint across entire sky
-      r.fillRectAlpha(px, py, pw, ph, '#ffa300', glowIntensity * 0.25);
+      r.fillRectAlpha(px, py, pw, ph, '#ffa300', glowIntensity * 0.5);
       // Stronger orange in lower 70%
       const midH = Math.ceil(ph * 0.7);
-      r.fillRectAlpha(px, py + ph - midH, pw, midH, '#ffa300', glowIntensity * 0.35);
+      r.fillRectAlpha(px, py + ph - midH, pw, midH, '#ffa300', glowIntensity * 0.3);
       // Pink/red band in lower 40%
       const lowH = Math.ceil(ph * 0.4);
       r.fillRectAlpha(px, py + ph - lowH, pw, lowH, '#ff77a8', glowIntensity * 0.4);
