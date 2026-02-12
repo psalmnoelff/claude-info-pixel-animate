@@ -66,15 +66,24 @@ The main process periodically scans all session log files modified within the pa
 - [Node.js](https://nodejs.org/) (v18 or later recommended)
 - [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code) installed and available on your PATH
 
-### Quick Start (PowerShell)
+### Quick Start
 
+**Windows (PowerShell):**
 ```powershell
 git clone <repository-url>
 cd cloffice-pixel
 powershell -ExecutionPolicy Bypass -File run.ps1
 ```
 
-The script installs dependencies automatically and launches the app.
+**macOS / Linux:**
+```bash
+git clone <repository-url>
+cd cloffice-pixel
+chmod +x run.sh
+./run.sh
+```
+
+The scripts install dependencies automatically and launch the app.
 
 ### Manual Setup
 
