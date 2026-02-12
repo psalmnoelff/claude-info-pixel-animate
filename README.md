@@ -242,7 +242,7 @@ Renderer (src/js/app.js)
 - Characters are Y-sorted each frame for correct depth ordering (painter's algorithm).
 - The leader desk is centered below the 6-worker desk grid with equal row spacing.
 - Workers are assigned to one of 6 desks on a first-come basis; overflow workers beyond desk capacity receive a phone-walking animation, pacing vertically on the right side of the office.
-- Characters route through a safe corridor above the desk zone to avoid walking through furniture.
+- Characters use grid-based BFS pathfinding (8px cell resolution) to navigate around desk and chair bounding boxes, with line-of-sight simplification for clean diagonal/straight paths.
 - Token usage is recomputed by scanning all session log files modified in the past week, running every ~15 seconds or immediately when new events arrive.
 - The context window bar accounts for Claude Code's ~33k autocompact buffer reserve.
 - The app uses `contextIsolation: true` and `nodeIntegration: false` for security.
@@ -253,7 +253,7 @@ Renderer (src/js/app.js)
 
 ```
 Row 0-2:  Wall (48px) -- whiteboard, windows, door, potted plants
-Row 3:    Safe corridor (character routing)
+Row 3:    Open corridor
 Row 4:    Desk row 1 -- 3 worker desks (x: 3, 8, 13)
 Row 5-6:  Aisle space
 Row 7:    Desk row 2 -- 3 worker desks (x: 3, 8, 13)
@@ -261,6 +261,10 @@ Row 8-9:  Aisle space
 Row 10:   Leader desk -- centered (x: 7, 2 tiles wide)
 Row 11:   Open space
 Row 12-13: HUD area (32px)
+
+Pathfinding: a 40x28 collision grid (8px cells) marks desk+chair bounding boxes
+(with 6px padding), wall, and HUD zones as blocked. BFS finds the shortest path,
+then line-of-sight checks simplify it into clean diagonal/straight segments.
 ```
 
 Overflow workers pace vertically on the right side (x: ~264px) between rows 4-12.
@@ -281,6 +285,7 @@ cloffice-pixel/
       app.js                           # Entry point -- wires all systems together
       config.js                        # Constants: resolution, palette, desk positions, speeds
       game-loop.js                     # Fixed-timestep game loop (60 FPS, crash resilient)
+      pathfinding.js                   # Grid-based BFS pathfinding around desk obstacles
       claude/
         claude-connector.js            # IPC bridge consumer, event routing
         stream-parser.js               # Parses NDJSON lines from Claude's stream-json output
