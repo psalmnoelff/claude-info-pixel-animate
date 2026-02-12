@@ -320,7 +320,7 @@ class StateMachine {
   // --- Worker Exit Sequence (leader shoots workers) ---
 
   startWorkerExitSequence() {
-    const workers = this.charMgr.workers.filter(w => w.visible);
+    const workers = this.charMgr.workers.filter(w => w.visible && !w.dying);
     if (workers.length === 0) {
       this.transition(STATES.IDLE);
       return;
@@ -340,7 +340,7 @@ class StateMachine {
   _approachNextWorker() {
     if (this.workerExitQueue.length === 0) {
       // All workers eliminated - leader returns to desk
-      this.workersExiting = false;
+      // Keep workersExiting=true so updateWorkerExitSequence processes the 'returning' phase
       const leader = this.charMgr.leader;
       leader.goToOwnDesk(() => leader.startSleeping());
       this.workerExitTimer = 0;
@@ -403,6 +403,7 @@ class StateMachine {
     }
 
     if (this.exitPhase === 'returning' && this.workerExitTimer >= 1.0) {
+      this.workersExiting = false;
       this.exitPhase = null;
       this.transition(STATES.IDLE);
     }
