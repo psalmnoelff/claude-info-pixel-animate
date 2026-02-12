@@ -35,7 +35,13 @@ Upgrade the rendering pipeline from 16x16 to 32x32 sprites using a `PIXEL_SCALE:
 - [x] Verified: `getBufferContext()` now only exists in canvas-renderer.js definition
 - Files confirmed clean (already used renderer methods): whiteboard.js, hud.js, desk.js, door.js, particles.js, fire-status.js
 
-## Phase 3: Native 32x32 Sprite Art (future)
+## Phase 3: Scale2x Smart Upscaling (DONE)
+- [x] Implemented Scale2x (EPX) algorithm in sprite-renderer.js
+- [x] 16x16 sprites auto-upscale with edge smoothing instead of blocky pixel doubling
+- [x] Tinted sprites also use Scale2x path
+- [x] Native 32x32 sprites still render 1:1 (data.length === 1024 detection)
+
+## Phase 4: Native 32x32 Sprite Art (future)
 - [ ] Create native 32x32 sprite data (1024-element arrays) in sprite-data.js
 - [ ] Replace upscaled 16x16 sprites one-by-one with hand-drawn 32x32 versions
 - [ ] The `isNative32` detection (data.length === 1024) already handles this automatically
