@@ -29,113 +29,24 @@ class Character {
     this.moveCallback = null;
   }
 
-  // Check if a desk column has a blocking desk between two Y positions
-  // Excludes the desk at nearY (the desk the character is leaving/arriving at)
-  _columnHasBlockingDesk(tileX, startY, endY, nearY) {
-    const T = CONFIG.TILE;
-    const minY = Math.min(startY, endY);
-    const maxY = Math.max(startY, endY);
-
-    // Check worker desks
-    const workerBlocked = CONFIG.DESKS.some(d => {
-      if (d.x !== tileX) return false;
-      const deskTop = d.y * T;
-      const deskBot = (d.y + 1) * T;
-      if (nearY >= deskTop && nearY < deskBot + T) return false;
-      return deskTop < maxY && deskBot > minY;
-    });
-    if (workerBlocked) return true;
-
-    // Check leader desk (2 tiles wide at LEADER_DESK_POS)
-    const ld = CONFIG.LEADER_DESK_POS;
-    if (tileX === ld.x || tileX === ld.x + 1) {
-      const deskTop = ld.y * T;
-      const deskBot = (ld.y + 1) * T;
-      if (!(nearY >= deskTop && nearY < deskBot + T)) {
-        if (deskTop < maxY && deskBot > minY) return true;
-      }
-    }
-
-    return false;
-  }
-
   // Move to a target position with tweening
   moveTo(target, speed, callback) {
-    // Cancel any existing movement first
     this.stopMovement();
 
-    const T = CONFIG.TILE;
     const dx = Math.abs(target.x - this.x);
     const dy = Math.abs(target.y - this.y);
 
-    // Already at destination - fire callback immediately
     if (dx < 1 && dy < 1) {
       if (callback) callback();
       return;
     }
 
-    // Safe horizontal corridor above all desk furniture
-    const SAFE_Y = 3 * T; // y=48
-    // Desk furniture zone (top-row desks start at y=64, leader desk at row 10 ends ~y=192)
-    const DESK_ZONE_TOP = 4 * T; // y=64
-    const DESK_ZONE_BOT = 12 * T; // y=192
+    // Use pathfinding grid to plot route around desks
+    const pathWaypoints = Character.pathGrid
+      ? Character.pathGrid.findPath(this.x, this.y, target.x, target.y)
+      : [{ x: target.x, y: target.y }];
 
-    const startInDesks = this.y >= DESK_ZONE_TOP && this.y <= DESK_ZONE_BOT;
-    const endInDesks = target.y >= DESK_ZONE_TOP && target.y <= DESK_ZONE_BOT;
-
-    const waypoints = [{ x: this.x, y: this.y }];
-
-    // Route through safe corridor when path crosses the desk zone
-    const pathMinY = Math.min(this.y, target.y);
-    const pathMaxY = Math.max(this.y, target.y);
-    const crossesDesks = pathMinY < DESK_ZONE_BOT && pathMaxY > DESK_ZONE_TOP;
-    const needsRouting = (dx > T || dy > T) && (startInDesks || endInDesks || crossesDesks);
-
-    if (needsRouting) {
-      const startTileX = Math.round(this.x / T);
-      const targetTileX = Math.round(target.x / T);
-
-      // Always use aisle when leaving/entering a desk column to avoid walking
-      // through desk furniture. Characters approach desks from the side.
-      const lx = CONFIG.LEADER_DESK_POS.x;
-      const hasDeskAt = (tx) => CONFIG.DESKS.some(d => d.x === tx) || tx === lx || tx === lx + 1;
-      const startHasDesk = hasDeskAt(startTileX);
-      const targetHasDesk = hasDeskAt(targetTileX);
-
-      // 1. Go up to safe corridor, stepping into aisle first if in a desk column
-      if (this.y > SAFE_Y) {
-        if (startHasDesk) {
-          const aisleX = (startTileX + 1) * T;
-          waypoints.push({ x: aisleX, y: this.y });
-          waypoints.push({ x: aisleX, y: SAFE_Y });
-        } else {
-          waypoints.push({ x: this.x, y: SAFE_Y });
-        }
-      }
-
-      // 2. Walk horizontally at safe Y, then descend via aisle if target is a desk column
-      if (targetHasDesk && endInDesks) {
-        const aisleX = (targetTileX + 1) * T;
-        waypoints.push({ x: aisleX, y: SAFE_Y });
-        waypoints.push({ x: aisleX, y: target.y });
-        waypoints.push({ x: target.x, y: target.y });
-      } else {
-        waypoints.push({ x: target.x, y: SAFE_Y });
-        waypoints.push({ x: target.x, y: target.y });
-      }
-    } else if (dx > 1 && dy > 1) {
-      // Simple L-path for short moves (within same desk column)
-      // Use Y-first to go up before horizontal when in desk zone
-      if (startInDesks && target.y < this.y) {
-        waypoints.push({ x: this.x, y: target.y });
-        waypoints.push({ x: target.x, y: target.y });
-      } else {
-        waypoints.push({ x: target.x, y: this.y });
-        waypoints.push({ x: target.x, y: target.y });
-      }
-    } else {
-      waypoints.push({ x: target.x, y: target.y });
-    }
+    const waypoints = [{ x: this.x, y: this.y }, ...pathWaypoints];
 
     this.tween = new TweenPath(waypoints, speed || CONFIG.MOVE_SPEED);
     this.state = 'walking';

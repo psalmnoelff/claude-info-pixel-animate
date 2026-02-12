@@ -12,6 +12,7 @@
   const door = new Door(renderer);
   const particles = new ParticleSystem();
   const appState = new AppState();
+  Character.pathGrid = new PathGrid();
   const charMgr = new CharacterManager();
   const stateMachine = new StateMachine(charMgr, whiteboard, door, particles, appState);
   const fireStatus = new FireStatus(renderer);
