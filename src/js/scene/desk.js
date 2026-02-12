@@ -32,8 +32,9 @@ class Desk {
     // Generate random code lines for scrolling effect
     this.codeLines = this._generateCodeLines(24);
     this.scrollOffset = 0;
-    // Second set for wide desk right monitor
+    // Extra sets for wide desk center + right monitors
     if (this.wide) {
+      this.codeLinesC = this._generateCodeLines(24);
       this.codeLinesR = this._generateCodeLines(24);
     }
   }
@@ -160,27 +161,38 @@ class Desk {
     // Desk edge highlight
     r.fillRect(px + 1, py + 2, w - 2, 1, CONFIG.COL.ORANGE);
 
+    // Three monitors (9px frame, 7px screen each, 1px gaps)
     // Left monitor
-    r.fillRect(px + 2, py, 10, 7, CONFIG.COL.DARK_GREY);
+    r.fillRect(px + 1, py, 9, 7, CONFIG.COL.DARK_GREY);
     if (this.sleeping) {
-      r.fillRect(px + 3, py + 1, 8, 5, CONFIG.COL.BLACK);
+      r.fillRect(px + 2, py + 1, 7, 5, CONFIG.COL.BLACK);
     } else if (this.occupied) {
-      this._drawCodeScreen(r, px + 3, py + 1, 8, 5, this.codeLines);
+      this._drawCodeScreen(r, px + 2, py + 1, 7, 5, this.codeLines);
     } else {
-      r.fillRect(px + 3, py + 1, 8, 5, CONFIG.COL.BLUE);
+      r.fillRect(px + 2, py + 1, 7, 5, CONFIG.COL.BLUE);
+    }
+
+    // Center monitor
+    r.fillRect(px + 11, py, 9, 7, CONFIG.COL.DARK_GREY);
+    if (this.sleeping) {
+      r.fillRect(px + 12, py + 1, 7, 5, CONFIG.COL.BLACK);
+    } else if (this.occupied) {
+      this._drawCodeScreen(r, px + 12, py + 1, 7, 5, this.codeLinesC);
+    } else {
+      r.fillRect(px + 12, py + 1, 7, 5, CONFIG.COL.BLUE);
     }
 
     // Right monitor
-    r.fillRect(px + T + 4, py, 10, 7, CONFIG.COL.DARK_GREY);
+    r.fillRect(px + 21, py, 9, 7, CONFIG.COL.DARK_GREY);
     if (this.sleeping) {
-      r.fillRect(px + T + 5, py + 1, 8, 5, CONFIG.COL.BLACK);
+      r.fillRect(px + 22, py + 1, 7, 5, CONFIG.COL.BLACK);
     } else if (this.occupied) {
-      this._drawCodeScreen(r, px + T + 5, py + 1, 8, 5, this.codeLinesR);
+      this._drawCodeScreen(r, px + 22, py + 1, 7, 5, this.codeLinesR);
     } else {
-      r.fillRect(px + T + 5, py + 1, 8, 5, CONFIG.COL.BLUE);
+      r.fillRect(px + 22, py + 1, 7, 5, CONFIG.COL.BLUE);
     }
 
-    // Keyboard (rounded outline)
+    // Keyboard (centered on desk)
     r.fillRect(px + 12, py + 8, 7, 3, CONFIG.COL.DARK_GREY);
     r.fillRect(px + 11, py + 9, 9, 1, CONFIG.COL.DARK_GREY);
     r.pixel(px + 12, py + 9, CONFIG.COL.LIGHT_GREY);
@@ -194,13 +206,17 @@ class Desk {
     // Screen glow when occupied and not sleeping
     if (this.screenGlow > 0.3 && this.occupied && !this.sleeping) {
       // Left monitor glow
+      r.pixel(px + 4, py - 1, this.screenFg);
       r.pixel(px + 5, py - 1, this.screenFg);
       r.pixel(px + 6, py - 1, this.screenFg);
-      r.pixel(px + 7, py - 1, this.screenFg);
+      // Center monitor glow
+      r.pixel(px + 14, py - 1, this.screenFg);
+      r.pixel(px + 15, py - 1, this.screenFg);
+      r.pixel(px + 16, py - 1, this.screenFg);
       // Right monitor glow
-      r.pixel(px + T + 7, py - 1, this.screenFg);
-      r.pixel(px + T + 8, py - 1, this.screenFg);
-      r.pixel(px + T + 9, py - 1, this.screenFg);
+      r.pixel(px + 24, py - 1, this.screenFg);
+      r.pixel(px + 25, py - 1, this.screenFg);
+      r.pixel(px + 26, py - 1, this.screenFg);
     }
   }
 
