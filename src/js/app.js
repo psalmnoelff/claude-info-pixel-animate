@@ -77,6 +77,7 @@
       case 'exit': if (charMgr.getWorkerCount() > 0) stateMachine.startWorkerExitSequence(); break;
       case 'janitor': appState.janitorNeeded = true; break;
       case 'error': if (charMgr.leader.visible) charMgr.leader.triggerError(); break;
+      case 'commit': eventClassifier.onGitCommit('test commit'); break;
     }
     settings.hide();
   };
