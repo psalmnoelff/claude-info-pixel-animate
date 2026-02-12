@@ -37,10 +37,10 @@ class Leader extends Character {
     this.goToDesk(callback);
   }
 
-  // Get the leader's sit position at their private desk (centered between 2-tile desk, below it)
+  // Get the leader's sit position at their private desk (aligned with middle column workers)
   getLeaderSitPosition() {
     return {
-      x: CONFIG.LEADER_DESK_POS.x * CONFIG.TILE + 8, // centered on 2-tile wide desk
+      x: CONFIG.LEADER_DESK_POS.x * CONFIG.TILE + CONFIG.TILE, // align with middle column worker sit position
       y: CONFIG.LEADER_DESK_POS.y * CONFIG.TILE + CONFIG.TILE - 8, // below desk, same as worker formula
     };
   }

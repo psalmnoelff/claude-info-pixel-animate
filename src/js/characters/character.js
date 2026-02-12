@@ -33,15 +33,28 @@ class Character {
     const T = CONFIG.TILE;
     const minY = Math.min(startY, endY);
     const maxY = Math.max(startY, endY);
-    return CONFIG.DESKS.some(d => {
+
+    // Check worker desks
+    const workerBlocked = CONFIG.DESKS.some(d => {
       if (d.x !== tileX) return false;
       const deskTop = d.y * T;
       const deskBot = (d.y + 1) * T;
-      // Exclude the desk the character is at/going to
       if (nearY >= deskTop && nearY < deskBot + T) return false;
-      // Does the desk overlap with the vertical path?
       return deskTop < maxY && deskBot > minY;
     });
+    if (workerBlocked) return true;
+
+    // Check leader desk (2 tiles wide at LEADER_DESK_POS)
+    const ld = CONFIG.LEADER_DESK_POS;
+    if (tileX === ld.x || tileX === ld.x + 1) {
+      const deskTop = ld.y * T;
+      const deskBot = (ld.y + 1) * T;
+      if (!(nearY >= deskTop && nearY < deskBot + T)) {
+        if (deskTop < maxY && deskBot > minY) return true;
+      }
+    }
+
+    return false;
   }
 
   // Move to a target position with tweening
@@ -60,10 +73,10 @@ class Character {
     }
 
     // Safe horizontal corridor above all desk furniture
-    const SAFE_Y = 2 * T; // y=32
-    // Desk furniture zone (top-row desks start at y=48, bottom-row ends ~y=120)
-    const DESK_ZONE_TOP = 3 * T; // y=48
-    const DESK_ZONE_BOT = 8 * T; // y=128
+    const SAFE_Y = 3 * T; // y=48
+    // Desk furniture zone (top-row desks start at y=64, leader desk at row 10 ends ~y=192)
+    const DESK_ZONE_TOP = 4 * T; // y=64
+    const DESK_ZONE_BOT = 12 * T; // y=192
 
     const startInDesks = this.y >= DESK_ZONE_TOP && this.y <= DESK_ZONE_BOT;
     const endInDesks = target.y >= DESK_ZONE_TOP && target.y <= DESK_ZONE_BOT;
@@ -203,26 +216,27 @@ class Character {
       renderer.pixel(cx + 9, cy + 5, CONFIG.COL.RED);
     }
 
-    // Smoke/anger bubble above head
-    const bx = cx + 4;
-    const by = cy - 11;
+    // Error bubble above head (bigger, white bg, black frame, red text)
+    const bx = cx + 1;
+    const by = cy - 16;
+    const bw = 14;
+    const bh = 12;
     const wobble = Math.floor(Math.sin(this.errorTimer * 8));
 
-    // Bubble background (rounded rect)
-    renderer.fillRect(bx + wobble + 1, by, 6, 7, CONFIG.COL.DARK_GREY);
-    renderer.fillRect(bx + wobble, by + 1, 8, 5, CONFIG.COL.DARK_GREY);
-    // Tail
-    renderer.pixel(bx + wobble + 3, by + 7, CONFIG.COL.DARK_GREY);
-    renderer.pixel(bx + wobble + 2, by + 8, CONFIG.COL.DARK_GREY);
+    // Black frame (rounded rect outline)
+    renderer.fillRect(bx + wobble + 1, by, bw - 2, bh, CONFIG.COL.BLACK);
+    renderer.fillRect(bx + wobble, by + 1, bw, bh - 2, CONFIG.COL.BLACK);
+
+    // White interior
+    renderer.fillRect(bx + wobble + 2, by + 1, bw - 4, bh - 2, CONFIG.COL.WHITE);
+    renderer.fillRect(bx + wobble + 1, by + 2, bw - 2, bh - 4, CONFIG.COL.WHITE);
+
+    // Tail (speech bubble pointer)
+    renderer.fillRect(bx + wobble + 4, by + bh, 2, 1, CONFIG.COL.BLACK);
+    renderer.pixel(bx + wobble + 5, by + bh + 1, CONFIG.COL.BLACK);
 
     // "!" symbol in red (centered in bubble)
-    PixelFont.draw(renderer, '!', bx + wobble + 2, by + 1, CONFIG.COL.RED);
-
-    // Smoke wisps above bubble (animated)
-    const sp = Math.floor(this.errorTimer * 3) % 3;
-    if (sp >= 0) renderer.pixel(bx + wobble + 1, by - 1, CONFIG.COL.LIGHT_GREY);
-    if (sp >= 1) renderer.pixel(bx + wobble + 5, by - 2, CONFIG.COL.LIGHT_GREY);
-    if (sp >= 2) renderer.pixel(bx + wobble + 3, by - 3, CONFIG.COL.LIGHT_GREY);
+    PixelFont.draw(renderer, '!!', bx + wobble + 3, by + 3, CONFIG.COL.RED);
   }
 
   // Position for sitting at a desk (offset from desk tile)

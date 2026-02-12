@@ -91,6 +91,7 @@
     for (const desk of desks) {
       const worker = charMgr.workers.find(w => w.deskIndex === desk.index);
       desk.occupied = worker && (worker.state === 'sitting' || worker.state === 'typing' || worker.state === 'sleeping');
+      desk.sleeping = worker && worker.state === 'sleeping';
       desk.update(dt);
     }
     // Update leader desk glow

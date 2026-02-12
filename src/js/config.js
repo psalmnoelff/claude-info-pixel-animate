@@ -2,13 +2,13 @@
 const CONFIG = {
   // Internal canvas resolution
   WIDTH: 320,
-  HEIGHT: 208,
+  HEIGHT: 224,
   TILE: 16,
   COLS: 20,  // 320/16
-  ROWS: 13,  // 208/16 = 13
+  ROWS: 14,  // 224/16 = 14
   PIXEL_SCALE: 2,
   BUFFER_WIDTH: 640,   // WIDTH * PIXEL_SCALE
-  BUFFER_HEIGHT: 416,  // HEIGHT * PIXEL_SCALE
+  BUFFER_HEIGHT: 448,  // HEIGHT * PIXEL_SCALE
   SPRITE_SIZE: 32,     // TILE * PIXEL_SCALE
 
   // PICO-8 inspired palette
@@ -53,37 +53,38 @@ const CONFIG = {
 
   // Desk positions (tile coords) - 6 worker desks
   DESKS: [
-    { x: 3, y: 3 },   // top-left
-    { x: 8, y: 3 },   // top-center
-    { x: 13, y: 3 },  // top-right
-    { x: 3, y: 6 },   // bottom-left
-    { x: 8, y: 6 },   // bottom-center
-    { x: 13, y: 6 },  // bottom-right
+    { x: 3, y: 4 },   // top-left
+    { x: 8, y: 4 },   // top-center
+    { x: 13, y: 4 },  // top-right
+    { x: 3, y: 7 },   // bottom-left
+    { x: 8, y: 7 },   // bottom-center
+    { x: 13, y: 7 },  // bottom-right
   ],
 
-  // Leader's private desk position (tile coords) - right side, 2 tiles wide
-  LEADER_DESK_POS: { x: 16, y: 6 },
+  // Leader's private desk position (tile coords) - centered below worker desks, 2 tiles wide
+  LEADER_DESK_POS: { x: 7, y: 10 },
   LEADER_DESK_WIDTH: 2, // 2 tiles wide with 2 PCs
 
   // Whiteboard position
   WHITEBOARD: { x: 6, y: 0, w: 5, h: 2 },
 
   // Door position
-  DOOR: { x: 17, y: 0, w: 2, h: 2 },
+  DOOR: { x: 17, y: 0, w: 2, h: 3 },
 
   // Leader default position (at own desk, centered between 2-tile desk)
   LEADER_DESK: -1,  // leader doesn't use a worker desk
-  LEADER_START: { x: 16 * 16 + 8, y: 6 * 16 + 16 - 8 },
+  LEADER_START: { x: 7 * 16 + 16, y: 10 * 16 + 16 - 8 },
 
   // Whiteboard standing position
-  WHITEBOARD_POS: { x: 8 * 16, y: 2 * 16 },
+  WHITEBOARD_POS: { x: 8 * 16, y: 3 * 16 },
 
   // Door entry position
-  DOOR_POS: { x: 17 * 16, y: 2 * 16 },
+  DOOR_POS: { x: 17 * 16, y: 3 * 16 },
 
-  // Overflow walk area
-  OVERFLOW_Y_MIN: 8 * 16,
-  OVERFLOW_Y_MAX: 11 * 16,
+  // Overflow walk area (vertical pacing on right side)
+  OVERFLOW_Y_MIN: 4 * 16,
+  OVERFLOW_Y_MAX: 12 * 16,
+  OVERFLOW_X: 16 * 16 + 8,
 
   // Wall and floor colors
   WALL_COLOR: 1,   // dark blue

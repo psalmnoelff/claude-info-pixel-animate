@@ -537,6 +537,9 @@ class StateMachine {
   }
 
   _stopAllRoaming() {
+    for (const [char] of this.roamingChars) {
+      char.stopMovement();
+    }
     this.roamingChars.clear();
   }
 
@@ -544,7 +547,7 @@ class StateMachine {
     const T = CONFIG.TILE;
     const minX = T;
     const maxX = CONFIG.WIDTH - 2 * T;
-    const minY = 2 * T + 4;
+    const minY = 3 * T + 4;
     const maxY = (CONFIG.ROWS - 2) * T;
 
     // Build desk bounding boxes to avoid (with padding)
@@ -774,7 +777,7 @@ class StateMachine {
 
   startJanitorSequence() {
     if (this.janitorActive) return;
-    if (this.whiteboard.scribbles.length === 0) {
+    if (this.whiteboard.elements.length === 0) {
       // Nothing to clean
       this.appState.janitorNeeded = false;
       return;
@@ -813,17 +816,17 @@ class StateMachine {
       this.janitorMopTimer += dt;
       this.janitorEraseTimer += dt;
 
-      // Gradually remove scribbles during the 2-second mop
-      if (this.janitorEraseTimer > 0.15 && this.whiteboard.scribbles.length > 0) {
+      // Gradually remove elements during the 2-second mop
+      if (this.janitorEraseTimer > 0.15 && this.whiteboard.elements.length > 0) {
         this.janitorEraseTimer = 0;
-        const removeCount = Math.min(5, this.whiteboard.scribbles.length);
-        this.whiteboard.scribbles.splice(0, removeCount);
+        const removeCount = Math.min(5, this.whiteboard.elements.length);
+        this.whiteboard.elements.splice(0, removeCount);
       }
 
       // After 2 seconds of mopping, finish up
       if (this.janitorMopTimer >= 2.0) {
-        // Clear any remaining scribbles
-        this.whiteboard.scribbles.length = 0;
+        // Clear any remaining elements
+        this.whiteboard.elements.length = 0;
         this.whiteboard.drawProgress = 0;
 
         // Walk back to door and exit

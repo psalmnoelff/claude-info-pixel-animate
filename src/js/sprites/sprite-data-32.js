@@ -247,7 +247,7 @@ const LEADER_GUN_FIRE = [].concat(
 );
 
 // ============================================================
-// Draw pose (leader at whiteboard - FRONT facing, arm raised)
+// Draw pose (leader at whiteboard - BACK facing, arm raised)
 // ============================================================
 const LEADER_DRAW_ARM_0 = [].concat(
   R(6,  1,15, 2,T, 1,0, 5,1, 2,7, 5,1, 1,0, 1,15),                  // row 19: left arm raised
@@ -268,15 +268,41 @@ const LEADER_DRAW_ARM_2 = [].concat(
 // Just uses the sit pose shifted down (head droops forward)
 
 // ============================================================
-// Phone pose (worker - front facing, phone at ear)
+// Phone pose (worker - front facing, arm raised to ear holding phone)
+// Replaces rows 8-21: raised right arm alongside head, phone at ear
 // ============================================================
-const WORKER_PHONE_ARM_0 = [].concat(
-  R(8,  1,15, 1,0, 5,6, 2,7, 5,6, 1,0, 1,15),                       // row 19
-  R(7,  1,15, 1,9, 1,0, 5,6, 2,7, 5,6, 1,0, 1,15)                   // row 20: phone (9=orange)
+const PHONE_UPPER_A = [].concat(
+  R(8,  1,0, 1,4, 12,15, 1,4, 1,0, 1,15),                            // row 8:  upper face + arm
+  R(8,  1,0, 1,4, 12,15, 1,4, 1,0, 1,15),                            // row 9:  face + arm
+  R(8,  1,0, 1,4, 2,15, 2,7, 2,15, 2,15, 2,7, 2,15, 1,4, 1,0, 1,9), // row 10: eyes + phone
+  R(8,  1,0, 1,4, 2,15, 2,0, 2,15, 2,15, 2,0, 2,15, 1,4, 1,0, 1,9), // row 11: pupils + phone
+  R(8,  1,0, 1,4, 12,15, 1,4, 1,0, 1,15),                            // row 12: cheeks + arm
+  R(8,  1,0, 1,4, 12,15, 1,4, 1,0, 1,15),                            // row 13: face + arm
+  R(8,  1,0, 1,4, 5,15, 2,8, 5,15, 1,4, 1,0, 1,15),                 // row 14: mouth + arm
+  R(9,  1,0, 12,15, 1,0, 1,T, 1,15),                                 // row 15: chin + arm
+  R(11, 1,0, 8,15, 1,0, 3,T, 1,15),                                  // row 16: neck + arm
+  R(10, 1,0, 4,6, 2,7, 4,6, 1,0, 2,T, 1,15),                        // row 17: collar + arm
+  R(9,  1,0, 5,6, 2,7, 5,6, 1,0, 1,T, 1,15),                        // row 18: shoulders + arm
+  R(8,  1,15, 1,0, 5,6, 2,7, 5,6, 1,0),                              // row 19: shirt (left hand only)
+  R(8,  1,15, 1,0, 5,6, 2,7, 5,6, 1,0),                              // row 20: shirt (left hand only)
+  R(9,  1,0, 5,6, 2,7, 5,6, 1,0)                                     // row 21: lower shirt
 );
-const WORKER_PHONE_ARM_1 = [].concat(
-  R(7,  1,15, 1,9, 1,0, 5,6, 2,7, 5,6, 1,0, 1,15),                  // row 19: phone up
-  R(8,  1,15, 1,0, 5,6, 2,7, 5,6, 1,0, 1,15)                        // row 20
+// Variant B: phone shifted up 1px (subtle fidget)
+const PHONE_UPPER_B = [].concat(
+  R(8,  1,0, 1,4, 12,15, 1,4, 1,0, 1,15),                            // row 8:  upper face + arm
+  R(8,  1,0, 1,4, 12,15, 1,4, 1,0, 1,9),                             // row 9:  face + phone (up)
+  R(8,  1,0, 1,4, 2,15, 2,7, 2,15, 2,15, 2,7, 2,15, 1,4, 1,0, 1,9), // row 10: eyes + phone
+  R(8,  1,0, 1,4, 2,15, 2,0, 2,15, 2,15, 2,0, 2,15, 1,4, 1,0, 1,15),// row 11: pupils + arm
+  R(8,  1,0, 1,4, 12,15, 1,4, 1,0, 1,15),                            // row 12: cheeks + arm
+  R(8,  1,0, 1,4, 12,15, 1,4, 1,0, 1,15),                            // row 13: face + arm
+  R(8,  1,0, 1,4, 5,15, 2,8, 5,15, 1,4, 1,0, 1,15),                 // row 14: mouth + arm
+  R(9,  1,0, 12,15, 1,0, 1,T, 1,15),                                 // row 15: chin + arm
+  R(11, 1,0, 8,15, 1,0, 3,T, 1,15),                                  // row 16: neck + arm
+  R(10, 1,0, 4,6, 2,7, 4,6, 1,0, 2,T, 1,15),                        // row 17: collar + arm
+  R(9,  1,0, 5,6, 2,7, 5,6, 1,0, 1,T, 1,15),                        // row 18: shoulders + arm
+  R(8,  1,15, 1,0, 5,6, 2,7, 5,6, 1,0),                              // row 19: shirt (left hand only)
+  R(8,  1,15, 1,0, 5,6, 2,7, 5,6, 1,0),                              // row 20: shirt (left hand only)
+  R(9,  1,0, 5,6, 2,7, 5,6, 1,0)                                     // row 21: lower shirt
 );
 
 // ============================================================
@@ -311,9 +337,9 @@ SPRITES.leader_type_0 = LEADER_SIT;
 SPRITES.leader_type_1 = shiftDown(LEADER_SIT);               // subtle lean forward
 
 // --- Leader draw (front view at whiteboard, arm raised) ---
-SPRITES.leader_draw_0 = replaceRows(LEADER_FRONT.slice(), 19, LEADER_DRAW_ARM_0);
-SPRITES.leader_draw_1 = replaceRows(LEADER_FRONT.slice(), 19, LEADER_DRAW_ARM_1);
-SPRITES.leader_draw_2 = replaceRows(LEADER_FRONT.slice(), 19, LEADER_DRAW_ARM_2);
+SPRITES.leader_draw_0 = replaceRows(LEADER_BACK.slice(), 19, LEADER_DRAW_ARM_0);
+SPRITES.leader_draw_1 = replaceRows(LEADER_BACK.slice(), 19, LEADER_DRAW_ARM_1);
+SPRITES.leader_draw_2 = replaceRows(LEADER_BACK.slice(), 19, LEADER_DRAW_ARM_2);
 
 // --- Leader shotgun poses (front view, gun extending right) ---
 SPRITES.leader_gun_draw_0 = replaceRows(LEADER_FRONT.slice(), 19, LEADER_GUN_DRAW_0);
@@ -354,10 +380,10 @@ SPRITES.worker_type_1 = shiftDown(WORKER_SIT);               // subtle lean
 SPRITES.worker_sleep_0 = WORKER_SIT;
 SPRITES.worker_sleep_1 = shiftDown(WORKER_SIT);
 
-// --- Worker phone (front view, phone at ear) ---
-SPRITES.worker_phone_0 = replaceRows(WORKER_FRONT.slice(), 19, WORKER_PHONE_ARM_0);
-SPRITES.worker_phone_1 = replaceRows(WORKER_FRONT.slice(), 19, WORKER_PHONE_ARM_1);
-SPRITES.worker_phone_2 = replaceRows(WORKER_FRONT.slice(), 19, WORKER_PHONE_ARM_0);
-SPRITES.worker_phone_3 = replaceRows(WORKER_FRONT.slice(), 19, WORKER_PHONE_ARM_1);
+// --- Worker phone (front view, arm raised to ear with phone, walking legs) ---
+SPRITES.worker_phone_0 = replaceRows(WORKER_FRONT.slice(), 8, PHONE_UPPER_A);
+SPRITES.worker_phone_1 = replaceRows(replaceRows(WORKER_FRONT.slice(), 8, PHONE_UPPER_B), 24, LEGS_SPREAD);
+SPRITES.worker_phone_2 = replaceRows(WORKER_FRONT.slice(), 8, PHONE_UPPER_A);
+SPRITES.worker_phone_3 = replaceRows(replaceRows(WORKER_FRONT.slice(), 8, PHONE_UPPER_B), 24, LEGS_SPREAD);
 
 })();

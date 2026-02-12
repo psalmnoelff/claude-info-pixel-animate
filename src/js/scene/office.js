@@ -12,8 +12,8 @@ class Office {
 
     for (let row = 0; row < CONFIG.ROWS; row++) {
       for (let col = 0; col < CONFIG.COLS; col++) {
-        if (row < 2) {
-          // Wall area
+        if (row < 3) {
+          // Wall area (3 tiles tall = 48px)
           r.fillRect(col * T, row * T, T, T, CONFIG.COL.DARK_BLUE);
         } else {
           // Floor - dark blue carpet with subtle grain
@@ -30,31 +30,31 @@ class Office {
     }
 
     // Wall baseboard
-    r.fillRect(0, 2 * T - 2, CONFIG.WIDTH, 2, CONFIG.COL.BROWN);
+    r.fillRect(0, 3 * T - 2, CONFIG.WIDTH, 2, CONFIG.COL.BROWN);
 
     // Wall decoration - subtle horizontal line
-    r.fillRect(0, T - 1, CONFIG.WIDTH, 1, CONFIG.COL.INDIGO);
+    r.fillRect(0, T + 8, CONFIG.WIDTH, 1, CONFIG.COL.INDIGO);
 
-    // Windows on the wall (larger, rounded)
-    this._drawWindow(r, 29, 3, 22, 20);   // Left section
-    this._drawWindow(r, 221, 3, 22, 20);  // Right section
+    // Windows on the wall (centered in 48px wall)
+    this._drawWindow(r, 29, 14, 22, 20);   // Left section
+    this._drawWindow(r, 221, 14, 22, 20);  // Right section
 
     // Fire on window panes (overwrites blue sky with fire)
     if (this.fireStatus) this.fireStatus.drawFire();
 
     // Redraw cross dividers on top of fire (so panes look divided)
     if (this.fireStatus && this.fireStatus.fireIntensity > 0.01) {
-      this._drawWindowOverlay(r, 29, 3, 22, 20);
-      this._drawWindowOverlay(r, 221, 3, 22, 20);
+      this._drawWindowOverlay(r, 29, 14, 22, 20);
+      this._drawWindowOverlay(r, 221, 14, 22, 20);
     }
 
     // Window tint (orange glow on glass)
     if (this.fireStatus) this.fireStatus.drawWindowTint();
 
     // Potted plants on the baseboard (wall level)
-    this._drawPlant(r, 4 * T + 4, 2 * T - 13, CONFIG.COL.RED);     // Left of whiteboard
-    this._drawPlant(r, 12 * T + 4, 2 * T - 13, CONFIG.COL.YELLOW);  // Right of whiteboard
-    this._drawPlant(r, 16 * T + 4, 2 * T - 13, CONFIG.COL.PINK);    // Left of door
+    this._drawPlant(r, 4 * T + 4, 3 * T - 13, CONFIG.COL.RED);     // Left of whiteboard
+    this._drawPlant(r, 12 * T + 4, 3 * T - 13, CONFIG.COL.YELLOW);  // Right of whiteboard
+    this._drawPlant(r, 15 * T + 4, 3 * T - 13, CONFIG.COL.PINK);    // Left of door
 
     // Corner plants (bottom corners, just above HUD)
     const floorBottom = CONFIG.HEIGHT - 32 - 12;
