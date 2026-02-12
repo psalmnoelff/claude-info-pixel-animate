@@ -41,6 +41,46 @@
     stateMachine.transition(demoSequence[0]);
   };
 
+  // Test trigger handler from settings menu
+  settings.onTest = (name) => {
+    demoMode = false;
+    switch (name) {
+      // States
+      case 'idle': stateMachine.transition(STATES.IDLE); break;
+      case 'thinking': stateMachine.transition(STATES.THINKING); break;
+      case 'delegating': stateMachine.transition(STATES.DELEGATING); break;
+      case 'coding': stateMachine.transition(STATES.CODING); break;
+      case 'done': stateMachine.transition(STATES.DONE); break;
+      case 'multi_agent': stateMachine.transition(STATES.MULTI_AGENT); break;
+      // Effects
+      case 'panic_on': stateMachine.activeWorkTimer = CONFIG.PANIC_TIMEOUT; break;
+      case 'panic_off': stateMachine.activeWorkTimer = 0; charMgr.leader.panicking = false; break;
+      case 'snow_on': stateMachine.globalInactivityTimer = CONFIG.SNOW_FULL_TIMEOUT; break;
+      case 'snow_off':
+        stateMachine.globalInactivityTimer = 0; stateMachine.snowProgress = 0;
+        charMgr.leader.freezeProgress = 0;
+        for (const w of charMgr.workers) w.freezeProgress = 0;
+        break;
+      case 'fire_on':
+        fireStatus.updateStatus({ hasActiveIncident: true, activeIncidents: [{ title: 'Test Incident', description: 'Test fire effect.', link: '', pubDate: new Date().toUTCString() }], recentIncidents: [] });
+        break;
+      case 'fire_off':
+        fireStatus.updateStatus({ hasActiveIncident: false, activeIncidents: [], recentIncidents: [] });
+        break;
+      // Window sky
+      case 'sky_night': office.setDayOverride(0); break;
+      case 'sky_day': office.setDayOverride(1); break;
+      case 'sky_sunrise': office._dayOverrideLerp = 0; office.setDayOverride(1); break;
+      case 'sky_sunset': office._dayOverrideLerp = 1; office.setDayOverride(0); break;
+      case 'sky_auto': office.clearDayOverride(); break;
+      // Actions
+      case 'exit': if (charMgr.getWorkerCount() > 0) stateMachine.startWorkerExitSequence(); break;
+      case 'janitor': appState.janitorNeeded = true; break;
+      case 'error': if (charMgr.leader.visible) charMgr.leader.triggerError(); break;
+    }
+    settings.hide();
+  };
+
   // Connect to Claude IPC if available
   connector.connect();
 
@@ -274,6 +314,24 @@
       } else {
         stateMachine.activeWorkTimer = CONFIG.PANIC_TIMEOUT;
         hud.flashMessage('PANIC: ON');
+      }
+    }
+
+    // N = cycle window sky: auto → sunset → night → sunrise → day → auto
+    if (e.key === 'n' || e.key === 'N') {
+      const current = office._dayOverride;
+      if (current === null) {
+        office.setDayOverride(0);
+        hud.flashMessage('SKY: SUNSET');
+      } else if (current === 0) {
+        office.setDayOverride(1);
+        hud.flashMessage('SKY: SUNRISE');
+      } else if (current === 1) {
+        office.clearDayOverride();
+        hud.flashMessage('SKY: AUTO');
+      } else {
+        office.clearDayOverride();
+        hud.flashMessage('SKY: AUTO');
       }
     }
 
