@@ -27,6 +27,11 @@ class StateMachine {
     this.workerExitQueue = [];
     this.workerExitTimer = 0;
 
+    // Graceful worker walk-out (workers walk to door and leave)
+    this.walkingOutWorkers = false;
+    this.workerWalkOutQueue = [];
+    this.workerWalkOutTimer = 0;
+
     // Lights-out sequence (extended IDLE -> leader exits, lights dim)
     // Start with lights off - leader enters when activity is detected
     this.lightsOn = false;
@@ -74,6 +79,11 @@ class StateMachine {
     // Cancel worker exit sequence if active
     if (this.workersExiting) {
       this._cancelWorkerExit();
+    }
+
+    // Cancel worker walk-out if interrupted
+    if (this.walkingOutWorkers) {
+      this._cancelWorkerWalkOut();
     }
 
     // Cancel lights-out if interrupted
@@ -124,13 +134,17 @@ class StateMachine {
     switch (state) {
       case STATES.IDLE:
         this.whiteboard.clearBoard();
-        this.charMgr.clearWorkers();
         leader.stopMovement();
         this._startRoaming(leader);
-        this.door.close();
         this.sleepParticleTimer = 0;
         this.activeWorkTimer = 0;
         leader.panicking = false;
+        // Walk workers out through the door instead of clearing instantly
+        if (this.charMgr.getWorkerCount() > 0) {
+          this._startWorkerWalkOut();
+        } else {
+          this.door.close();
+        }
         break;
 
       case STATES.THINKING:
@@ -480,6 +494,65 @@ class StateMachine {
     this.gunDrawn = false;
   }
 
+  // --- Graceful Worker Walk-Out (workers walk to door and leave) ---
+
+  _startWorkerWalkOut() {
+    const workers = this.charMgr.workers.filter(w => w.visible && !w.dying);
+    if (workers.length === 0) {
+      this.charMgr.clearWorkers();
+      this.door.close();
+      return;
+    }
+
+    this.door.open();
+    this.walkingOutWorkers = true;
+    this.workerWalkOutQueue = [...workers];
+    this.workerWalkOutTimer = 0;
+
+    // Send the first worker immediately
+    this._sendNextWorkerOut();
+  }
+
+  _sendNextWorkerOut() {
+    if (this.workerWalkOutQueue.length === 0) return;
+
+    const w = this.workerWalkOutQueue.shift();
+    w.stopMovement();
+    w.setIdle();
+    w.moveTo(CONFIG.DOOR_POS, CONFIG.MOVE_SPEED, () => {
+      w.visible = false;
+      this.charMgr.removeWorker(w);
+      this.appState.agentCount = this.charMgr.getWorkerCount();
+      // Close door after last worker leaves
+      if (this.charMgr.getWorkerCount() === 0) {
+        this.walkingOutWorkers = false;
+        this.door.close();
+      }
+    });
+    this.workerWalkOutTimer = 0;
+  }
+
+  _updateWorkerWalkOut(dt) {
+    if (!this.walkingOutWorkers) return;
+    this.workerWalkOutTimer += dt;
+    if (this.workerWalkOutTimer >= CONFIG.WORKER_EXIT_STAGGER && this.workerWalkOutQueue.length > 0) {
+      this._sendNextWorkerOut();
+    }
+  }
+
+  _cancelWorkerWalkOut() {
+    this.walkingOutWorkers = false;
+    this.workerWalkOutQueue = [];
+    this.workerWalkOutTimer = 0;
+    // Stop workers mid-walk
+    for (const w of this.charMgr.workers) {
+      if (w.visible && w.state === 'walking') {
+        w.stopMovement();
+        w.setIdle();
+      }
+    }
+  }
+
   // --- Planning Sequence (whiteboard -> pace -> pause -> repeat) ---
 
   updatePlanningSequence(dt) {
@@ -711,6 +784,9 @@ class StateMachine {
       this.updateWorkerExitSequence(dt);
     }
 
+    // Worker walk-out update
+    this._updateWorkerWalkOut(dt);
+
     // Planning sequence update
     if (this.state === STATES.PLANNING) {
       this.updatePlanningSequence(dt);
@@ -910,6 +986,7 @@ class StateMachine {
     // Cancel any active sequences
     this._stopAllRoaming();
     this._cancelWorkerExit();
+    this._cancelWorkerWalkOut();
     if (this.janitorActive && this.janitor) {
       this.janitor.visible = false;
       this.janitor = null;
