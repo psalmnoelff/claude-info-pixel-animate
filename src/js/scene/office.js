@@ -54,7 +54,8 @@ class Office {
     // Potted plants on the baseboard (wall level)
     this._drawPlant(r, 4 * T + 4, 3 * T - 13, CONFIG.COL.RED);     // Left of whiteboard
     this._drawPlant(r, 12 * T + 4, 3 * T - 13, CONFIG.COL.YELLOW);  // Right of whiteboard
-    this._drawPlant(r, 15 * T + 4, 3 * T - 13, CONFIG.COL.PINK);    // Left of door
+    this._drawPlant(r, 16 * T + 4, 3 * T - 13, CONFIG.COL.PINK);    // Left of door
+    this._drawPlant(r, 19 * T - 2, 3 * T - 13, CONFIG.COL.GREEN);   // Right of door
 
     // Corner plants (bottom corners, just above HUD)
     const floorBottom = CONFIG.HEIGHT - 32 - 12;
