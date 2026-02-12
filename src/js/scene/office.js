@@ -114,13 +114,20 @@ class Office {
       r.fillRectAlpha(px, py, pw, ph, '#29adff', Math.min(1, (dp - 0.3) * 1.8));
     }
 
-    // Sunrise/sunset glow (orange at bottom half, peaks during transition)
+    // Sunrise/sunset glow (full window gradient, peaks during transition)
     const glowIntensity = dp * (1 - dp) * 4;
     if (glowIntensity > 0.05) {
-      const glowH = Math.ceil(ph * 0.6);
-      r.fillRectAlpha(px, py + ph - glowH, pw, glowH, '#ffa300', glowIntensity * 0.6);
-      const pinkH = Math.ceil(ph * 0.35);
-      r.fillRectAlpha(px, py + ph - pinkH, pw, pinkH, '#ff77a8', glowIntensity * 0.35);
+      // Warm tint across entire sky
+      r.fillRectAlpha(px, py, pw, ph, '#ffa300', glowIntensity * 0.25);
+      // Stronger orange in lower 70%
+      const midH = Math.ceil(ph * 0.7);
+      r.fillRectAlpha(px, py + ph - midH, pw, midH, '#ffa300', glowIntensity * 0.35);
+      // Pink/red band in lower 40%
+      const lowH = Math.ceil(ph * 0.4);
+      r.fillRectAlpha(px, py + ph - lowH, pw, lowH, '#ff77a8', glowIntensity * 0.4);
+      // Deep orange horizon at very bottom
+      const horizonH = Math.ceil(ph * 0.15);
+      r.fillRectAlpha(px, py + ph - horizonH, pw, horizonH, '#ff004d', glowIntensity * 0.25);
     }
 
     // Stars (visible during night)
