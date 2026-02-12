@@ -91,6 +91,23 @@ class ParticleSystem {
     }
   }
 
+  // Spawn "?" particle above a character (interrupted state)
+  spawnQuestion(x, y) {
+    this.particles.push({
+      type: 'zzz',
+      x: x + 3,
+      y: y - 6,
+      char: '?',
+      life: 2.5,
+      maxLife: 2.5,
+      vx: 0,
+      vy: -3,
+      color: CONFIG.COL.LIGHT_GREY,
+      delay: 0,
+      size: 1,
+    });
+  }
+
   // Spawn a snow particle falling from the ceiling
   spawnSnow(intensity) {
     const x = Math.random() * CONFIG.WIDTH;

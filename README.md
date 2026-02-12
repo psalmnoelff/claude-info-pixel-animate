@@ -12,7 +12,7 @@ ClOffice Pixel is an Electron desktop app that turns Claude Code's real-time act
 - **Animated pixel art office** -- a PICO-8-inspired scene with a leader character, up to 6 worker agents at desks, a whiteboard with structured diagrams, an animated door, and particle effects (ZZZ bubbles, typing sparkles, muzzle flashes).
 - **Scrolling code screens** -- PC monitors display scrolling lines of code with random color themes per desk (terminal green, light mode, blue/yellow, etc.). Screens go black when workers are sleeping.
 - **RPG-style HUD** -- four status bars track your 5-hour session budget, Sonnet quota, weekly all-model quota, and context window usage at a glance. Click any bar for a description.
-- **Event-driven state machine** -- Claude's tool calls (Edit, Bash, Read, Task, etc.) are classified into distinct visual states: Idle, Thinking, Delegating, Coding, Planning, Multi-Agent, and Done. The DONE transition is debounced by 3 seconds to prevent flickering during multi-turn tasks.
+- **Event-driven state machine** -- Claude's tool calls (Edit, Bash, Read, Task, etc.) are classified into distinct visual states: Idle, Thinking, Delegating, Coding, Planning, Multi-Agent, Interrupted, and Done. The DONE transition is debounced by 3 seconds to prevent flickering during multi-turn tasks.
 - **Git commit celebration** -- detects `git commit` commands in Bash tool calls and triggers a confetti particle burst with a HUD message showing the commit summary.
 - **Multi-agent support** -- when Claude spawns sub-agents via the Task tool, new color-tinted worker characters walk through the office door and sit at desks. Beyond 6 agents, overflow workers pace vertically on the right side of the office talking on phones.
 - **Incident monitoring** -- office windows show animated fire effects when Claude has active status incidents. Click a window to view incident details with links.
@@ -55,6 +55,7 @@ The `EventClassifier` inspects each event and triggers state transitions:
 | Delegating | First `Task` tool call (no workers yet) | --> DELEGATING |
 | Multi-Agent | Subsequent `Task` tool calls (workers exist) | --> MULTI_AGENT |
 | Planning | EnterPlanMode or ExitPlanMode tool calls | --> PLANNING |
+| Interrupted | User message contains `[Request interrupted` | --> INTERRUPTED |
 | Done | A `result` event arrives (3s debounce) | --> DONE |
 
 ### Usage Tracking
@@ -143,6 +144,7 @@ Press **D** to toggle demo mode. The scene cycles through all states every 4 sec
 | `F`       | Toggle fire test (status incident)      |
 | `E`       | Workers exit one by one                 |
 | `S`       | Cycle active sessions                   |
+| `U`       | Toggle interrupted state                |
 | `N`       | Cycle window sky (auto/sunset/sunrise)  |
 | `R`       | Reset to initial state                  |
 | `Alt`     | Show the menu bar (auto-hidden)         |
@@ -197,6 +199,7 @@ The scene is driven by a finite state machine with these visual states:
 | **CODING**      | Coding tool call (Edit, Bash, Read, etc.)   | Leader and all workers move to their desks and type. PC screens scroll code. Sparkle particles appear. |
 | **PLANNING**    | Plan mode tool calls                        | Leader alternates between drawing on the whiteboard and pacing back and forth.    |
 | **MULTI_AGENT** | Subsequent `Task` tool calls                | Another worker spawns through the door and takes a desk.                         |
+| **INTERRUPTED** | User presses Ctrl+C/Escape in Claude Code   | All characters freeze in place, face forward, and show "?" speech bubbles. After 60 seconds, transitions to Done. |
 | **DONE**        | Result event (turn complete)                | Everyone roams around the office and sleeps at random spots. ZZZ particles rise. |
 | **OVERFLOW**    | More than 5 agents spawned                  | Excess workers without desks pace vertically on the right side, talking on phones with raised arms. |
 
@@ -205,6 +208,7 @@ The scene is driven by a finite state machine with these visual states:
 - **Worker Exit** -- after the Done timeout, the leader walks to each worker with a shotgun draw/cock/shoot animation sequence, dismissing them one by one before returning to their desk.
 - **Lights Out** -- after extended idle time, the leader walks to the door and exits. The office dims to 75% darkness. Activity resumes when new events arrive.
 - **Janitor** -- when context is compacted or full, a janitor character enters through the door, mops the whiteboard clean, and exits.
+- **Interrupted** -- when the user presses Ctrl+C or Escape in Claude Code, all characters freeze in place with "?" speech bubbles above their heads, with floating "?" particles. After 60 seconds of no new activity, transitions to Done.
 - **Error Bubbles** -- when workers encounter errors, a white speech bubble with black frame and red "!!" text appears above their head with angry red blinking eyes.
 
 ---

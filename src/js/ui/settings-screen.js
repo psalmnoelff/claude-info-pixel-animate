@@ -93,6 +93,7 @@ class SettingsScreen {
               <button class="si-test" data-test="coding" style="background:#5f574f;color:#fff1e8;border:none;padding:4px 8px;font-family:monospace;font-size:11px;cursor:pointer;">CODE</button>
               <button class="si-test" data-test="done" style="background:#5f574f;color:#fff1e8;border:none;padding:4px 8px;font-family:monospace;font-size:11px;cursor:pointer;">DONE</button>
               <button class="si-test" data-test="multi_agent" style="background:#5f574f;color:#fff1e8;border:none;padding:4px 8px;font-family:monospace;font-size:11px;cursor:pointer;">+AGENT</button>
+              <button class="si-test" data-test="interrupted" style="background:#5f574f;color:#fff1e8;border:none;padding:4px 8px;font-family:monospace;font-size:11px;cursor:pointer;">INTERRUPT</button>
             </div>
             <p style="margin: 0 0 6px; color: #83769c; font-size: 11px;">EFFECTS</p>
             <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px;">
@@ -135,6 +136,7 @@ class SettingsScreen {
             <tr><td style="color: #29adff;">P</td><td>Toggle leader panic</td></tr>
             <tr><td style="color: #29adff;">I</td><td>Toggle snow storm</td></tr>
             <tr><td style="color: #29adff;">N</td><td>Cycle window sky (auto/night/day)</td></tr>
+            <tr><td style="color: #29adff;">U</td><td>Toggle interrupted state</td></tr>
             <tr><td colspan="2" style="padding-top: 4px; color: #83769c;">--- Test States ---</td></tr>
             <tr><td style="color: #ffa300;">0</td><td>IDLE</td></tr>
             <tr><td style="color: #ffa300;">1</td><td>THINKING</td></tr>

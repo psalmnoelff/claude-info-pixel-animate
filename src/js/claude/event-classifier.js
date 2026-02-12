@@ -72,8 +72,23 @@ class EventClassifier {
             this._handleError();
           }
         } else {
-          // User sent a new message - new turn starts, Claude will think
-          this.stateMachine.transition(STATES.THINKING);
+          // Check if this is an interruption ([Request interrupted by user])
+          const content = event.message?.content;
+          let isInterrupted = false;
+          if (Array.isArray(content)) {
+            for (const block of content) {
+              if (block.type === 'text' && block.text && block.text.startsWith('[Request interrupted')) {
+                isInterrupted = true;
+                break;
+              }
+            }
+          }
+          if (isInterrupted) {
+            this.stateMachine.transition(STATES.INTERRUPTED);
+          } else {
+            // User sent a new message - new turn starts, Claude will think
+            this.stateMachine.transition(STATES.THINKING);
+          }
         }
         break;
       }

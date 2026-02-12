@@ -53,6 +53,7 @@
       case 'coding': stateMachine.transition(STATES.CODING); break;
       case 'done': stateMachine.transition(STATES.DONE); break;
       case 'multi_agent': stateMachine.transition(STATES.MULTI_AGENT); break;
+      case 'interrupted': stateMachine.transition(STATES.INTERRUPTED); break;
       // Effects
       case 'panic_on': stateMachine.activeWorkTimer = CONFIG.PANIC_TIMEOUT; break;
       case 'panic_off': stateMachine.activeWorkTimer = 0; charMgr.leader.panicking = false; break;
@@ -360,6 +361,18 @@
       } else {
         stateMachine.globalInactivityTimer = CONFIG.SNOW_FULL_TIMEOUT;
         hud.flashMessage('SNOW: ON');
+      }
+    }
+
+    // U = toggle interrupted state
+    if (e.key === 'u' || e.key === 'U') {
+      demoMode = false;
+      if (stateMachine.getState() === STATES.INTERRUPTED) {
+        stateMachine.transition(STATES.DONE);
+        hud.flashMessage('INTERRUPTED: OFF');
+      } else {
+        stateMachine.transition(STATES.INTERRUPTED);
+        hud.flashMessage('INTERRUPTED: ON');
       }
     }
 

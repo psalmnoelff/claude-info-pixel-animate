@@ -8,6 +8,7 @@ const STATES = {
   MULTI_AGENT: 'MULTI_AGENT',
   OVERFLOW: 'OVERFLOW',
   PLANNING: 'PLANNING',
+  INTERRUPTED: 'INTERRUPTED',
 };
 
 class StateMachine {
@@ -59,6 +60,10 @@ class StateMachine {
     // Leader panic (long active work session)
     this.activeWorkTimer = 0;
     this.leaderPanicking = false;
+
+    // Interrupted state (user pressed Ctrl+C/Escape)
+    this.interruptedTimer = 0;
+    this.interruptedParticleTimer = 0;
 
     // Snow storm (extended inactivity)
     this.globalInactivityTimer = 0;
@@ -118,6 +123,13 @@ class StateMachine {
       case STATES.PLANNING:
         this.charMgr.leader.isDrawing = false;
         this.planningPhase = null;
+        break;
+      case STATES.INTERRUPTED:
+        // Clear interrupted flag on all characters
+        this.charMgr.leader.interrupted = false;
+        for (const w of this.charMgr.workers) {
+          w.interrupted = false;
+        }
         break;
     }
   }
@@ -235,6 +247,23 @@ class StateMachine {
           this.planningTimer = 0;
         });
         break;
+
+      case STATES.INTERRUPTED:
+        // Stop all character movement and set to idle facing forward
+        leader.stopMovement();
+        leader.setIdle();
+        leader.facingRight = true;
+        leader.interrupted = true;
+        for (const w of this.charMgr.workers) {
+          if (w.isOverflow) continue;
+          w.stopMovement();
+          w.setIdle();
+          w.facingRight = true;
+          w.interrupted = true;
+        }
+        this.interruptedTimer = 0;
+        this.interruptedParticleTimer = 0;
+        break;
     }
   }
 
@@ -277,6 +306,8 @@ class StateMachine {
         return this.charMgr.leader.getLeaderSitPosition();
       case STATES.IDLE:
         return this.charMgr.leader.getLeaderSitPosition();
+      case STATES.INTERRUPTED:
+        return this.charMgr.leader.getLeaderSitPosition();
       default:
         return this.charMgr.leader.getLeaderSitPosition();
     }
@@ -314,6 +345,13 @@ class StateMachine {
         break;
       case STATES.IDLE:
         this._startRoaming(leader);
+        break;
+      case STATES.INTERRUPTED:
+        leader.setIdle();
+        leader.facingRight = true;
+        leader.interrupted = true;
+        this.interruptedTimer = 0;
+        this.interruptedParticleTimer = 0;
         break;
     }
   }
@@ -798,6 +836,28 @@ class StateMachine {
       this.updatePlanningSequence(dt);
     }
 
+    // INTERRUPTED timeout: after INTERRUPTED_TIMEOUT seconds, auto-transition to DONE
+    if (this.state === STATES.INTERRUPTED) {
+      this.interruptedTimer += dt;
+      if (this.interruptedTimer >= CONFIG.INTERRUPTED_TIMEOUT) {
+        this.transition(STATES.DONE);
+      }
+      // Spawn "?" particles periodically above each visible character
+      this.interruptedParticleTimer += dt;
+      if (this.interruptedParticleTimer > 2.0) {
+        this.interruptedParticleTimer = 0;
+        const leader = this.charMgr.leader;
+        if (leader.visible && leader.interrupted) {
+          this.particles.spawnQuestion(leader.x + 4, leader.y);
+        }
+        for (const w of this.charMgr.workers) {
+          if (w.visible && w.interrupted) {
+            this.particles.spawnQuestion(w.x + 4, w.y);
+          }
+        }
+      }
+    }
+
     // DONE timeout: after DONE_TIMEOUT seconds, start worker exit
     if (this.state === STATES.DONE && !this.workersExiting && this.stateTimer > CONFIG.DONE_TIMEOUT) {
       this.startWorkerExitSequence();
@@ -889,8 +949,11 @@ class StateMachine {
       }
     }
 
-    // --- Snow storm (extended inactivity) ---
-    this.globalInactivityTimer += dt;
+    // --- Snow storm (API timeout during active work) ---
+    const activeStatesForSnow = [STATES.CODING, STATES.THINKING, STATES.DELEGATING, STATES.MULTI_AGENT, STATES.OVERFLOW, STATES.PLANNING];
+    if (activeStatesForSnow.includes(this.state)) {
+      this.globalInactivityTimer += dt;
+    }
     if (this.globalInactivityTimer >= CONFIG.SNOW_START_TIMEOUT) {
       // Snow builds up
       const snowRange = CONFIG.SNOW_FULL_TIMEOUT - CONFIG.SNOW_START_TIMEOUT;
@@ -1021,6 +1084,10 @@ class StateMachine {
     this.lightsOutSequenceActive = false;
     this.leaderExiting = false;
 
+    // Reset interrupted
+    this.interruptedTimer = 0;
+    this.interruptedParticleTimer = 0;
+
     // Reset panic and snow
     this.activeWorkTimer = 0;
     this.leaderPanicking = false;
@@ -1032,6 +1099,7 @@ class StateMachine {
     leader.stopMovement();
     leader.visible = false;
     leader.panicking = false;
+    leader.interrupted = false;
     leader.freezeProgress = 0;
     leader.x = CONFIG.DOOR_POS.x;
     leader.y = CONFIG.DOOR_POS.y;
@@ -1044,6 +1112,7 @@ class StateMachine {
   signalActivity() {
     this.lastActivityTime = 0;
     this.globalInactivityTimer = 0;
+    this.interruptedTimer = 0;
   }
 
   // Handle keyboard testing (1-5 keys)

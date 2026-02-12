@@ -14,6 +14,7 @@ class Character {
     this.id = Character._nextId++;
     this.errorTimer = 0;
     this.panicking = false;
+    this.interrupted = false;
     this.freezeProgress = 0; // 0 = normal, 1 = fully frozen
   }
 
@@ -143,6 +144,11 @@ class Character {
       this._drawFreezeOverlay(renderer, drawX, drawY);
     }
 
+    // Interrupted overlay (speech bubble with "?")
+    if (this.interrupted) {
+      this._drawInterruptedOverlay(renderer);
+    }
+
     // Error overlay (speech bubble + red eyes)
     if (this.errorTimer > 0) {
       this._drawErrorOverlay(renderer);
@@ -180,6 +186,32 @@ class Character {
 
     // "!" symbol in red (centered in bubble)
     PixelFont.draw(renderer, '!!', bx + wobble + 3, by + 3, CONFIG.COL.RED);
+  }
+
+  _drawInterruptedOverlay(renderer) {
+    const cx = Math.floor(this.x);
+    const cy = Math.floor(this.y);
+
+    // Speech bubble above head (white bg, black frame, "?" text)
+    const bx = cx + 2;
+    const by = cy - 14 + Math.floor(Math.sin(Date.now() * 0.003) * 1); // gentle bob
+    const bw = 12;
+    const bh = 11;
+
+    // Black frame (rounded rect outline)
+    renderer.fillRect(bx + 1, by, bw - 2, bh, CONFIG.COL.BLACK);
+    renderer.fillRect(bx, by + 1, bw, bh - 2, CONFIG.COL.BLACK);
+
+    // White interior
+    renderer.fillRect(bx + 2, by + 1, bw - 4, bh - 2, CONFIG.COL.WHITE);
+    renderer.fillRect(bx + 1, by + 2, bw - 2, bh - 4, CONFIG.COL.WHITE);
+
+    // Tail (speech bubble pointer)
+    renderer.fillRect(bx + 4, by + bh, 2, 1, CONFIG.COL.BLACK);
+    renderer.pixel(bx + 5, by + bh + 1, CONFIG.COL.BLACK);
+
+    // "?" character in light grey (centered in bubble)
+    PixelFont.draw(renderer, '?', bx + 4, by + 3, CONFIG.COL.LIGHT_GREY);
   }
 
   _drawPanicOverlay(renderer, drawX, drawY) {
