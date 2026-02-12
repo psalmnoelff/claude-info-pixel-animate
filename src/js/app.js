@@ -111,7 +111,7 @@
   eventClassifier.onGitCommit = (msg) => {
     // HUD message
     const shortMsg = msg.length > 24 ? msg.substring(0, 24) + '..' : msg;
-    hud.flashMessage('COMMIT: ' + shortMsg);
+    hud.flashMessage('COMMIT: ' + shortMsg, 5);
     // Confetti burst from leader
     const lx = charMgr.leader.x + 8;
     const ly = charMgr.leader.y;

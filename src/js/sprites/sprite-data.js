@@ -1155,6 +1155,26 @@ chair: [
   T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T,
 ],
 
+// Leader chair — bigger with red frame
+leader_chair: [
+  T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T,
+  T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T,
+  T, T, T, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, T, T, T,
+  T, T, 8, 8, 0, 0, 0, 0, 0, 0, 0, 0, 8, 8, T, T,
+  T, T, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, T, T,
+  T, T, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, T, T,
+  T, T, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, T, T,
+  T, T, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, T, T,
+  T, T, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, T, T,
+  T, T, T, T, T, T, T, 8, 8, T, T, T, T, T, T, T,
+  T, T, T, T, T, 8, T, T, T, T, 8, T, T, T, T, T,
+  T, T, T, T, T, 8, 8, 8, 8, 8, 8, T, T, T, T, T,
+  T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T,
+  T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T,
+  T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T,
+  T, T, T, T, T, T, T, T, T, T, T, T, T, T, T, T,
+],
+
 
 // ===== JANITOR CHARACTER (green cap, green uniform, bucket + mop) =====
 

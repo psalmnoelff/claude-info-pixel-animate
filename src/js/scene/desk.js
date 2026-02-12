@@ -214,7 +214,8 @@ class Desk {
     }
     const py = (this.tileY + 1) * T - 3 + Math.round(this.chairOffset);
 
-    const chairSprite = SpriteRenderer.get('chair');
+    const chairName = this.wide ? 'leader_chair' : 'chair';
+    const chairSprite = SpriteRenderer.get(chairName);
     if (chairSprite) {
       r.drawImage(chairSprite, px, py);
     } else {
