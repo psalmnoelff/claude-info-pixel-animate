@@ -10,6 +10,8 @@ class Desk {
     this.occupied = false;
     this.screenColor = CONFIG.COL.BLUE;
     this.screenColorTimer = 0;
+    this.chairOffset = 0;   // 0 = pushed in, 5 = pulled back
+    this.chairTarget = 0;
   }
 
   update(dt) {
@@ -34,6 +36,19 @@ class Desk {
       this.screenColor = CONFIG.COL.BLUE;
       this.screenColorTimer = 0;
     }
+
+    // Chair push-in/pull-back animation
+    this.chairTarget = this.occupied ? 5 : 0;
+    const chairSpeed = 40;
+    if (Math.abs(this.chairOffset - this.chairTarget) > 0.1) {
+      if (this.chairOffset < this.chairTarget) {
+        this.chairOffset = Math.min(this.chairOffset + chairSpeed * dt, this.chairTarget);
+      } else {
+        this.chairOffset = Math.max(this.chairOffset - chairSpeed * dt, this.chairTarget);
+      }
+    } else {
+      this.chairOffset = this.chairTarget;
+    }
   }
 
   draw() {
@@ -51,8 +66,9 @@ class Desk {
     const py = this.tileY * T;
     const sc = this.occupied ? this.screenColor : CONFIG.COL.BLUE;
 
-    // Desk frame (black outline)
-    r.fillRect(px, py + 1, 24, T - 2, CONFIG.COL.BLACK);
+    // Desk frame (black outline with rounded corners)
+    r.fillRect(px + 1, py + 1, 22, T - 2, CONFIG.COL.BLACK);
+    r.fillRect(px, py + 2, 24, T - 4, CONFIG.COL.BLACK);
     // Desk surface (24px wide)
     r.fillRect(px + 1, py + 2, 22, T - 4, CONFIG.COL.BROWN);
     // Desk edge highlight
@@ -62,8 +78,9 @@ class Desk {
     r.fillRect(px + 7, py, 10, 7, CONFIG.COL.DARK_GREY);
     r.fillRect(px + 8, py + 1, 8, 5, sc);
 
-    // Keyboard (centered on desk)
-    r.fillRect(px + 7, py + 8, 9, 3, CONFIG.COL.DARK_GREY);
+    // Keyboard (rounded outline)
+    r.fillRect(px + 8, py + 8, 7, 3, CONFIG.COL.DARK_GREY);
+    r.fillRect(px + 7, py + 9, 9, 1, CONFIG.COL.DARK_GREY);
     r.pixel(px + 8, py + 9, CONFIG.COL.LIGHT_GREY);
     r.pixel(px + 10, py + 9, CONFIG.COL.LIGHT_GREY);
     r.pixel(px + 12, py + 9, CONFIG.COL.LIGHT_GREY);
@@ -89,8 +106,9 @@ class Desk {
     const w = T * 2; // 2 tiles wide
     const sc = this.occupied ? this.screenColor : CONFIG.COL.BLUE;
 
-    // Desk frame (black outline)
-    r.fillRect(px, py + 1, w, T - 2, CONFIG.COL.BLACK);
+    // Desk frame (black outline with rounded corners)
+    r.fillRect(px + 1, py + 1, w - 2, T - 2, CONFIG.COL.BLACK);
+    r.fillRect(px, py + 2, w, T - 4, CONFIG.COL.BLACK);
     // Single desk surface spanning 2 tiles
     r.fillRect(px + 1, py + 2, w - 2, T - 4, CONFIG.COL.BROWN);
     // Desk edge highlight
@@ -104,8 +122,9 @@ class Desk {
     r.fillRect(px + T + 4, py, 10, 7, CONFIG.COL.DARK_GREY);
     r.fillRect(px + T + 5, py + 1, 8, 5, sc);
 
-    // Keyboard (centered between monitors)
-    r.fillRect(px + 11, py + 8, 9, 3, CONFIG.COL.DARK_GREY);
+    // Keyboard (rounded outline)
+    r.fillRect(px + 12, py + 8, 7, 3, CONFIG.COL.DARK_GREY);
+    r.fillRect(px + 11, py + 9, 9, 1, CONFIG.COL.DARK_GREY);
     r.pixel(px + 12, py + 9, CONFIG.COL.LIGHT_GREY);
     r.pixel(px + 14, py + 9, CONFIG.COL.LIGHT_GREY);
     r.pixel(px + 16, py + 9, CONFIG.COL.LIGHT_GREY);
@@ -135,7 +154,7 @@ class Desk {
     if (this.wide) {
       px = this.tileX * T + T / 2; // center on 2-tile wide desk
     }
-    const py = (this.tileY + 1) * T;
+    const py = (this.tileY + 1) * T + Math.round(this.chairOffset);
 
     const chairSprite = SpriteRenderer.get('chair');
     if (chairSprite) {

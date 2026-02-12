@@ -57,11 +57,20 @@ class Door {
         r.drawImage(bl, px, py + 2 * T);
         r.drawImage(br, px + T, py + 2 * T);
       } else {
-        // Fallback: dark opening with frame
+        // Fallback: dark opening with depth and frame
         r.fillRect(px, py, w, h, CONFIG.COL.BLACK);
+        // Depth shading (dark blue at edges)
+        r.fillRect(px + 1, py + 1, 2, h - 2, CONFIG.COL.DARK_BLUE);
+        r.fillRect(px + w - 3, py + 1, 2, h - 2, CONFIG.COL.DARK_BLUE);
+        r.fillRect(px + 1, py + 1, w - 2, 2, CONFIG.COL.DARK_BLUE);
+        // Frame on sides and top
         r.fillRect(px, py, 1, h, CONFIG.COL.BROWN);
         r.fillRect(px + w - 1, py, 1, h, CONFIG.COL.BROWN);
         r.fillRect(px, py, w, 1, CONFIG.COL.BROWN);
+        // Rounded top corners
+        r.pixel(px, py, CONFIG.COL.DARK_BLUE);
+        r.pixel(px + w - 1, py, CONFIG.COL.DARK_BLUE);
+        // Threshold
         r.fillRect(px, py + h - 1, w, 1, CONFIG.COL.BROWN);
       }
     } else {
@@ -80,12 +89,36 @@ class Door {
         r.drawImage(bl, px, py + 2 * T);
         r.drawImage(br, px + T, py + 2 * T);
       } else {
-        // Fallback: brown door with panels
+        // Fallback: detailed closed door
+        // Door frame (brown outline with lighter inner edge)
         r.fillRect(px, py, w, h, CONFIG.COL.BROWN);
-        r.fillRect(px + 3, py + 3, w - 6, h / 3 - 4, CONFIG.COL.ORANGE);
-        r.fillRect(px + 3, py + h / 3 + 1, w - 6, h / 3 - 4, CONFIG.COL.ORANGE);
-        r.fillRect(px + 3, py + 2 * h / 3 + 1, w - 6, h / 3 - 4, CONFIG.COL.ORANGE);
-        r.fillRect(px + w - 6, py + h / 2 - 1, 2, 3, CONFIG.COL.YELLOW);
+        r.fillRect(px + 1, py + 1, w - 2, h - 2, CONFIG.COL.ORANGE);
+        r.fillRect(px + 2, py + 2, w - 4, h - 3, CONFIG.COL.BROWN);
+
+        // Rounded top corners (arched doorway)
+        r.pixel(px, py, CONFIG.COL.DARK_BLUE);
+        r.pixel(px + 1, py, CONFIG.COL.DARK_BLUE);
+        r.pixel(px, py + 1, CONFIG.COL.DARK_BLUE);
+        r.pixel(px + w - 1, py, CONFIG.COL.DARK_BLUE);
+        r.pixel(px + w - 2, py, CONFIG.COL.DARK_BLUE);
+        r.pixel(px + w - 1, py + 1, CONFIG.COL.DARK_BLUE);
+
+        // Upper recessed panel
+        r.fillRect(px + 5, py + 5, w - 10, 14, CONFIG.COL.DARK_GREY);
+        r.fillRect(px + 5, py + 5, w - 10, 13, CONFIG.COL.ORANGE);
+        r.fillRect(px + 5, py + 5, w - 10, 1, CONFIG.COL.YELLOW);
+
+        // Lower recessed panel
+        r.fillRect(px + 5, py + 22, w - 10, 18, CONFIG.COL.DARK_GREY);
+        r.fillRect(px + 5, py + 22, w - 10, 17, CONFIG.COL.ORANGE);
+        r.fillRect(px + 5, py + 22, w - 10, 1, CONFIG.COL.YELLOW);
+
+        // Doorknob (yellow circle with shadow)
+        r.fillRect(px + w - 8, py + 24, 3, 3, CONFIG.COL.YELLOW);
+        r.pixel(px + w - 8, py + 26, CONFIG.COL.DARK_GREY);
+
+        // Threshold strip at bottom
+        r.fillRect(px, py + h - 1, w, 1, CONFIG.COL.BLACK);
       }
     }
   }

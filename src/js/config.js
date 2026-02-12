@@ -66,7 +66,7 @@ const CONFIG = {
   LEADER_DESK_WIDTH: 2, // 2 tiles wide with 2 PCs
 
   // Whiteboard position
-  WHITEBOARD: { x: 5, y: 0, w: 7, h: 2 },
+  WHITEBOARD: { x: 6, y: 0, w: 5, h: 2 },
 
   // Door position
   DOOR: { x: 17, y: 0, w: 2, h: 3 },
