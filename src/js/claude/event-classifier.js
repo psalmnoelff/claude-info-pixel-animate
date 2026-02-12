@@ -46,7 +46,8 @@ class EventClassifier {
 
         // Check for text content (thinking)
         if (StreamParser.hasTextContent(event)) {
-          if (this.stateMachine.getState() === STATES.IDLE) {
+          const currentState = this.stateMachine.getState();
+          if (currentState === STATES.IDLE || currentState === STATES.DONE) {
             this.stateMachine.transition(STATES.THINKING);
           }
         }
