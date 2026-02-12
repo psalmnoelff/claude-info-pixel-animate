@@ -82,8 +82,47 @@ class SettingsScreen {
           ">CLOSE</button>
         </div>
 
-        <div style="margin-top: 15px; padding: 10px; background: #000; border: 1px solid #5f574f;">
-          <p style="margin: 0 0 6px; color: #ffec27; font-size: 12px;">KEYBOARD SHORTCUTS</p>
+        <details style="margin-top: 10px;">
+          <summary style="color: #ffa300; cursor: pointer; font-size: 13px;">TEST TRIGGERS</summary>
+          <div style="margin-top: 8px; padding: 10px; background: #000; border: 1px solid #5f574f;">
+            <p style="margin: 0 0 6px; color: #83769c; font-size: 11px;">STATES</p>
+            <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px;" id="si-test-states">
+              <button class="si-test" data-test="idle" style="background:#5f574f;color:#fff1e8;border:none;padding:4px 8px;font-family:monospace;font-size:11px;cursor:pointer;">IDLE</button>
+              <button class="si-test" data-test="thinking" style="background:#5f574f;color:#fff1e8;border:none;padding:4px 8px;font-family:monospace;font-size:11px;cursor:pointer;">THINK</button>
+              <button class="si-test" data-test="delegating" style="background:#5f574f;color:#fff1e8;border:none;padding:4px 8px;font-family:monospace;font-size:11px;cursor:pointer;">DELEG</button>
+              <button class="si-test" data-test="coding" style="background:#5f574f;color:#fff1e8;border:none;padding:4px 8px;font-family:monospace;font-size:11px;cursor:pointer;">CODE</button>
+              <button class="si-test" data-test="done" style="background:#5f574f;color:#fff1e8;border:none;padding:4px 8px;font-family:monospace;font-size:11px;cursor:pointer;">DONE</button>
+              <button class="si-test" data-test="multi_agent" style="background:#5f574f;color:#fff1e8;border:none;padding:4px 8px;font-family:monospace;font-size:11px;cursor:pointer;">+AGENT</button>
+            </div>
+            <p style="margin: 0 0 6px; color: #83769c; font-size: 11px;">EFFECTS</p>
+            <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px;">
+              <button class="si-test" data-test="panic_on" style="background:#5f574f;color:#fff1e8;border:none;padding:4px 8px;font-family:monospace;font-size:11px;cursor:pointer;">PANIC ON</button>
+              <button class="si-test" data-test="panic_off" style="background:#5f574f;color:#fff1e8;border:none;padding:4px 8px;font-family:monospace;font-size:11px;cursor:pointer;">PANIC OFF</button>
+              <button class="si-test" data-test="snow_on" style="background:#5f574f;color:#fff1e8;border:none;padding:4px 8px;font-family:monospace;font-size:11px;cursor:pointer;">SNOW ON</button>
+              <button class="si-test" data-test="snow_off" style="background:#5f574f;color:#fff1e8;border:none;padding:4px 8px;font-family:monospace;font-size:11px;cursor:pointer;">SNOW OFF</button>
+              <button class="si-test" data-test="fire_on" style="background:#5f574f;color:#fff1e8;border:none;padding:4px 8px;font-family:monospace;font-size:11px;cursor:pointer;">FIRE ON</button>
+              <button class="si-test" data-test="fire_off" style="background:#5f574f;color:#fff1e8;border:none;padding:4px 8px;font-family:monospace;font-size:11px;cursor:pointer;">FIRE OFF</button>
+            </div>
+            <p style="margin: 0 0 6px; color: #83769c; font-size: 11px;">WINDOW SKY</p>
+            <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px;">
+              <button class="si-test" data-test="sky_auto" style="background:#5f574f;color:#fff1e8;border:none;padding:4px 8px;font-family:monospace;font-size:11px;cursor:pointer;">AUTO</button>
+              <button class="si-test" data-test="sky_night" style="background:#5f574f;color:#fff1e8;border:none;padding:4px 8px;font-family:monospace;font-size:11px;cursor:pointer;">NIGHT</button>
+              <button class="si-test" data-test="sky_sunrise" style="background:#5f574f;color:#fff1e8;border:none;padding:4px 8px;font-family:monospace;font-size:11px;cursor:pointer;">SUNRISE</button>
+              <button class="si-test" data-test="sky_day" style="background:#5f574f;color:#fff1e8;border:none;padding:4px 8px;font-family:monospace;font-size:11px;cursor:pointer;">DAY</button>
+              <button class="si-test" data-test="sky_sunset" style="background:#5f574f;color:#fff1e8;border:none;padding:4px 8px;font-family:monospace;font-size:11px;cursor:pointer;">SUNSET</button>
+            </div>
+            <p style="margin: 0 0 6px; color: #83769c; font-size: 11px;">ACTIONS</p>
+            <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+              <button class="si-test" data-test="exit" style="background:#5f574f;color:#fff1e8;border:none;padding:4px 8px;font-family:monospace;font-size:11px;cursor:pointer;">EXIT WORKERS</button>
+              <button class="si-test" data-test="janitor" style="background:#5f574f;color:#fff1e8;border:none;padding:4px 8px;font-family:monospace;font-size:11px;cursor:pointer;">JANITOR</button>
+              <button class="si-test" data-test="error" style="background:#5f574f;color:#fff1e8;border:none;padding:4px 8px;font-family:monospace;font-size:11px;cursor:pointer;">ERROR</button>
+            </div>
+          </div>
+        </details>
+
+        <details style="margin-top: 10px;">
+          <summary style="color: #ffec27; cursor: pointer; font-size: 12px;">KEYBOARD SHORTCUTS</summary>
+          <div style="margin-top: 8px; padding: 10px; background: #000; border: 1px solid #5f574f;">
           <table style="width: 100%; font-size: 11px; color: #c2c3c7; border-spacing: 2px 3px;">
             <tr><td style="color: #29adff; width: 50px;">ESC</td><td>Open / close settings</td></tr>
             <tr><td style="color: #29adff;">D</td><td>Toggle demo mode (auto-cycle states)</td></tr>
@@ -91,22 +130,22 @@ class SettingsScreen {
             <tr><td style="color: #29adff;">T</td><td>Toggle always-on-top</td></tr>
             <tr><td style="color: #29adff;">S</td><td>Cycle active sessions</td></tr>
             <tr><td style="color: #29adff;">E</td><td>Workers exit one by one</td></tr>
-            <tr><td style="color: #29adff;">F</td><td>Toggle fire test (status incident)</td></tr>
-            <tr><td style="color: #29adff;">P</td><td>Toggle leader panic (stress test)</td></tr>
-            <tr><td style="color: #29adff;">I</td><td>Toggle snow storm (freeze test)</td></tr>
+            <tr><td style="color: #29adff;">F</td><td>Toggle fire test</td></tr>
+            <tr><td style="color: #29adff;">P</td><td>Toggle leader panic</td></tr>
+            <tr><td style="color: #29adff;">I</td><td>Toggle snow storm</td></tr>
+            <tr><td style="color: #29adff;">N</td><td>Cycle window sky (auto/night/day)</td></tr>
             <tr><td colspan="2" style="padding-top: 4px; color: #83769c;">--- Test States ---</td></tr>
-            <tr><td style="color: #ffa300;">0</td><td>IDLE (lights out)</td></tr>
-            <tr><td style="color: #ffa300;">1</td><td>THINKING (whiteboard)</td></tr>
-            <tr><td style="color: #ffa300;">2</td><td>DELEGATING (briefing)</td></tr>
-            <tr><td style="color: #ffa300;">3</td><td>CODING (typing)</td></tr>
-            <tr><td style="color: #ffa300;">4</td><td>DONE (sleeping)</td></tr>
-            <tr><td style="color: #ffa300;">5</td><td>MULTI-AGENT (spawn worker)</td></tr>
-            <tr><td style="color: #ffa300;">6</td><td>Janitor (clean whiteboard)</td></tr>
-            <tr><td style="color: #ffa300;">7</td><td>Error on random worker</td></tr>
-            <tr><td style="color: #ffa300;">8</td><td>Error on team leader</td></tr>
-            <tr><td style="color: #ffa300;">9</td><td>Error on all characters</td></tr>
+            <tr><td style="color: #ffa300;">0</td><td>IDLE</td></tr>
+            <tr><td style="color: #ffa300;">1</td><td>THINKING</td></tr>
+            <tr><td style="color: #ffa300;">2</td><td>DELEGATING</td></tr>
+            <tr><td style="color: #ffa300;">3</td><td>CODING</td></tr>
+            <tr><td style="color: #ffa300;">4</td><td>DONE</td></tr>
+            <tr><td style="color: #ffa300;">5</td><td>MULTI-AGENT</td></tr>
+            <tr><td style="color: #ffa300;">6</td><td>Janitor</td></tr>
+            <tr><td style="color: #ffa300;">7-9</td><td>Errors</td></tr>
           </table>
-        </div>
+          </div>
+        </details>
       </div>
     `;
 
@@ -166,6 +205,13 @@ class SettingsScreen {
     this.overlay.querySelector('#si-close').addEventListener('click', () => {
       this.hide();
     });
+
+    // Test trigger buttons
+    for (const btn of this.overlay.querySelectorAll('.si-test')) {
+      btn.addEventListener('click', () => {
+        if (this.onTest) this.onTest(btn.dataset.test);
+      });
+    }
   }
 
   updateSessionList(sessions) {

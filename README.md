@@ -140,6 +140,7 @@ Press **D** to toggle demo mode. The scene cycles through all states every 4 sec
 | `F`       | Toggle fire test (status incident)      |
 | `E`       | Workers exit one by one                 |
 | `S`       | Cycle active sessions                   |
+| `N`       | Cycle window sky (auto/sunset/sunrise)  |
 | `R`       | Reset to initial state                  |
 | `Alt`     | Show the menu bar (auto-hidden)         |
 | `0`       | Force state: Idle                       |

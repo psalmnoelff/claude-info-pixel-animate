@@ -4,6 +4,22 @@ class Office {
     this.renderer = renderer;
     this.stateMachine = stateMachine;
     this.fireStatus = fireStatus;
+
+    // Day/night override (null = auto/natural time)
+    this._dayOverride = null;
+    this._dayOverrideLerp = null;
+  }
+
+  setDayOverride(target) {
+    this._dayOverride = target;
+    if (target !== null && this._dayOverrideLerp === null) {
+      this._dayOverrideLerp = this._getNaturalDayProgress();
+    }
+  }
+
+  clearDayOverride() {
+    this._dayOverride = null;
+    this._dayOverrideLerp = null;
   }
 
   draw() {
@@ -11,8 +27,8 @@ class Office {
     const T = CONFIG.TILE;
 
     // Cache time values for this frame
-    this._dayProgress = this._getDayProgress();
     this._time = Date.now() / 1000;
+    this._updateDayProgress();
 
     for (let row = 0; row < CONFIG.ROWS; row++) {
       for (let col = 0; col < CONFIG.COLS; col++) {
@@ -179,9 +195,29 @@ class Office {
     r.pixel(x + 9, y + 3, flowerColor);
   }
 
+  _updateDayProgress() {
+    if (this._dayOverride !== null) {
+      if (this._dayOverrideLerp === null) {
+        this._dayOverrideLerp = this._getNaturalDayProgress();
+      }
+      const target = this._dayOverride;
+      const speed = 0.08; // ~12 seconds for full 0→1 transition
+      const diff = target - this._dayOverrideLerp;
+      if (Math.abs(diff) < 0.005) {
+        this._dayOverrideLerp = target;
+      } else {
+        this._dayOverrideLerp += Math.sign(diff) * speed / 60;
+      }
+      this._dayProgress = Math.max(0, Math.min(1, this._dayOverrideLerp));
+    } else {
+      this._dayOverrideLerp = null;
+      this._dayProgress = this._getNaturalDayProgress();
+    }
+  }
+
   // Day progress: 0 = full night, 1 = full day
   // Dawn ~5:30-7:00, Dusk ~19:00-20:30
-  _getDayProgress() {
+  _getNaturalDayProgress() {
     const now = new Date();
     const h = now.getHours() + now.getMinutes() / 60;
 
