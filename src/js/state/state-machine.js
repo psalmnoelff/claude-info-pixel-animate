@@ -539,7 +539,7 @@ class StateMachine {
       // Check desk collision
       let blocked = false;
       for (const box of deskBoxes) {
-        if (x + 16 > box.x1 && x < box.x2 && y + 16 > box.y1 && y < box.y2) {
+        if (x + CONFIG.TILE > box.x1 && x < box.x2 && y + CONFIG.TILE > box.y1 && y < box.y2) {
           blocked = true;
           break;
         }
