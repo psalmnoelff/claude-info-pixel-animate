@@ -194,12 +194,12 @@ The scene is driven by a finite state machine with these visual states:
 | State           | Trigger                                     | Scene Behavior                                                                  |
 |-----------------|---------------------------------------------|---------------------------------------------------------------------------------|
 | **IDLE**        | Initial state / no active session           | Leader roams and sleeps at their desk. All workers are dismissed. ZZZ particles rise. |
-| **THINKING**    | Assistant produces text content              | Leader walks to the whiteboard and draws structured diagrams (boxes, text, arrows). |
+| **THINKING**    | Assistant produces text content              | Leader walks to the whiteboard and draws structured diagrams. Workers go to their desks and type. |
 | **DELEGATING**  | First `Task` tool call                      | Door opens. A worker spawns, enters, and joins the leader at the whiteboard.     |
 | **CODING**      | Coding tool call (Edit, Bash, Read, etc.)   | Leader and all workers move to their desks and type. PC screens scroll code. Sparkle particles appear. |
 | **PLANNING**    | Plan mode tool calls                        | Leader alternates between drawing on the whiteboard and pacing back and forth.    |
 | **MULTI_AGENT** | Subsequent `Task` tool calls                | Another worker spawns through the door and takes a desk.                         |
-| **INTERRUPTED** | User presses Ctrl+C/Escape in Claude Code   | All characters freeze in place, face forward, and show "?" speech bubbles. After 60 seconds, transitions to Done. |
+| **INTERRUPTED** | User presses Ctrl+C/Escape in Claude Code   | All characters (including overflow) freeze in place, face forward, and show "?" speech bubbles. After 60 seconds, transitions to Done. |
 | **DONE**        | Result event (turn complete)                | Everyone roams around the office and sleeps at random spots. ZZZ particles rise. |
 | **OVERFLOW**    | More than 5 agents spawned                  | Excess workers without desks pace vertically on the right side, talking on phones with raised arms. |
 
