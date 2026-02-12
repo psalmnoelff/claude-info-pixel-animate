@@ -17,7 +17,7 @@ class Office {
           r.fillRect(col * T, row * T, T, T, CONFIG.COL.DARK_BLUE);
         } else {
           // Floor - single shade carpet
-          r.fillRect(col * T, row * T, T, T, CONFIG.COL.INDIGO);
+          r.fillRect(col * T, row * T, T, T, CONFIG.COL.DARK_BLUE);
         }
       }
     }
