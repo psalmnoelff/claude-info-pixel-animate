@@ -161,62 +161,65 @@ class Desk {
     // Desk edge highlight
     r.fillRect(px + 1, py + 2, w - 2, 1, CONFIG.COL.ORANGE);
 
-    // Three monitors (9px frame, 7px screen each, 1px gaps)
+    // Three monitors (12x8 frame, 10x6 screen, 2px gaps)
+    // Total 40px centered on 32px desk (4px overhang each side)
+    const mx = px - 4;
+
     // Left monitor
-    r.fillRect(px + 1, py, 9, 7, CONFIG.COL.DARK_GREY);
+    r.fillRect(mx, py, 12, 8, CONFIG.COL.DARK_GREY);
     if (this.sleeping) {
-      r.fillRect(px + 2, py + 1, 7, 5, CONFIG.COL.BLACK);
+      r.fillRect(mx + 1, py + 1, 10, 6, CONFIG.COL.BLACK);
     } else if (this.occupied) {
-      this._drawCodeScreen(r, px + 2, py + 1, 7, 5, this.codeLines);
+      this._drawCodeScreen(r, mx + 1, py + 1, 10, 6, this.codeLines);
     } else {
-      r.fillRect(px + 2, py + 1, 7, 5, CONFIG.COL.BLUE);
+      r.fillRect(mx + 1, py + 1, 10, 6, CONFIG.COL.BLUE);
     }
 
     // Center monitor
-    r.fillRect(px + 11, py, 9, 7, CONFIG.COL.DARK_GREY);
+    r.fillRect(mx + 14, py, 12, 8, CONFIG.COL.DARK_GREY);
     if (this.sleeping) {
-      r.fillRect(px + 12, py + 1, 7, 5, CONFIG.COL.BLACK);
+      r.fillRect(mx + 15, py + 1, 10, 6, CONFIG.COL.BLACK);
     } else if (this.occupied) {
-      this._drawCodeScreen(r, px + 12, py + 1, 7, 5, this.codeLinesC);
+      this._drawCodeScreen(r, mx + 15, py + 1, 10, 6, this.codeLinesC);
     } else {
-      r.fillRect(px + 12, py + 1, 7, 5, CONFIG.COL.BLUE);
+      r.fillRect(mx + 15, py + 1, 10, 6, CONFIG.COL.BLUE);
     }
 
     // Right monitor
-    r.fillRect(px + 21, py, 9, 7, CONFIG.COL.DARK_GREY);
+    r.fillRect(mx + 28, py, 12, 8, CONFIG.COL.DARK_GREY);
     if (this.sleeping) {
-      r.fillRect(px + 22, py + 1, 7, 5, CONFIG.COL.BLACK);
+      r.fillRect(mx + 29, py + 1, 10, 6, CONFIG.COL.BLACK);
     } else if (this.occupied) {
-      this._drawCodeScreen(r, px + 22, py + 1, 7, 5, this.codeLinesR);
+      this._drawCodeScreen(r, mx + 29, py + 1, 10, 6, this.codeLinesR);
     } else {
-      r.fillRect(px + 22, py + 1, 7, 5, CONFIG.COL.BLUE);
+      r.fillRect(mx + 29, py + 1, 10, 6, CONFIG.COL.BLUE);
     }
 
     // Keyboard (centered on desk)
-    r.fillRect(px + 12, py + 8, 7, 3, CONFIG.COL.DARK_GREY);
-    r.fillRect(px + 11, py + 9, 9, 1, CONFIG.COL.DARK_GREY);
-    r.pixel(px + 12, py + 9, CONFIG.COL.LIGHT_GREY);
-    r.pixel(px + 14, py + 9, CONFIG.COL.LIGHT_GREY);
-    r.pixel(px + 16, py + 9, CONFIG.COL.LIGHT_GREY);
-    r.pixel(px + 18, py + 9, CONFIG.COL.LIGHT_GREY);
+    r.fillRect(px + 12, py + 9, 7, 3, CONFIG.COL.DARK_GREY);
+    r.fillRect(px + 11, py + 10, 9, 1, CONFIG.COL.DARK_GREY);
+    r.pixel(px + 12, py + 10, CONFIG.COL.LIGHT_GREY);
+    r.pixel(px + 14, py + 10, CONFIG.COL.LIGHT_GREY);
+    r.pixel(px + 16, py + 10, CONFIG.COL.LIGHT_GREY);
+    r.pixel(px + 18, py + 10, CONFIG.COL.LIGHT_GREY);
 
     // Mouse (right of keyboard)
-    r.fillRect(px + 21, py + 9, 2, 2, CONFIG.COL.LIGHT_GREY);
+    r.fillRect(px + 22, py + 10, 2, 2, CONFIG.COL.LIGHT_GREY);
 
     // Screen glow when occupied and not sleeping
     if (this.screenGlow > 0.3 && this.occupied && !this.sleeping) {
       // Left monitor glow
-      r.pixel(px + 4, py - 1, this.screenFg);
-      r.pixel(px + 5, py - 1, this.screenFg);
-      r.pixel(px + 6, py - 1, this.screenFg);
+      r.pixel(mx + 4, py - 1, this.screenFg);
+      r.pixel(mx + 5, py - 1, this.screenFg);
+      r.pixel(mx + 6, py - 1, this.screenFg);
       // Center monitor glow
-      r.pixel(px + 14, py - 1, this.screenFg);
-      r.pixel(px + 15, py - 1, this.screenFg);
-      r.pixel(px + 16, py - 1, this.screenFg);
+      r.pixel(mx + 18, py - 1, this.screenFg);
+      r.pixel(mx + 19, py - 1, this.screenFg);
+      r.pixel(mx + 20, py - 1, this.screenFg);
       // Right monitor glow
-      r.pixel(px + 24, py - 1, this.screenFg);
-      r.pixel(px + 25, py - 1, this.screenFg);
-      r.pixel(px + 26, py - 1, this.screenFg);
+      r.pixel(mx + 32, py - 1, this.screenFg);
+      r.pixel(mx + 33, py - 1, this.screenFg);
+      r.pixel(mx + 34, py - 1, this.screenFg);
     }
   }
 
