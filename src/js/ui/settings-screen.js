@@ -19,7 +19,7 @@ class SettingsScreen {
         min-width: 400px; image-rendering: auto;
         max-height: 90vh; overflow-y: auto;
       ">
-        <h2 style="margin: 0 0 15px; color: #ffec27; font-size: 16px;">CLAUDE INFO - SETTINGS</h2>
+        <h2 style="margin: 0 0 15px; color: #ffec27; font-size: 16px;">CLOFFICE PIXEL - SETTINGS</h2>
 
         <div style="margin-bottom: 15px; padding: 10px; background: #000; border: 1px solid #5f574f;">
           <p style="margin: 0 0 8px; color: #00e436; font-size: 13px;">LISTEN MODE (Recommended)</p>

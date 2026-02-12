@@ -1,5 +1,5 @@
 {
-  "name": "claude-info",
+  "name": "cloffice-pixel",
   "version": "1.0.0",
   "description": "Pixel art visualizer for Claude Code sessions",
   "main": "main.js",

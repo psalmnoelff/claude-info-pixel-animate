@@ -1,4 +1,4 @@
-# Claude Info - Pixel Art Claude Code Visualizer
+# ClOffice Pixel - Pixel Art Claude Code Visualizer
 
 ## Context
 Build an Electron desktop app that visualizes Claude Code's real-time state as an animated pixel art office scene. The app parses Claude Code's `--output-format stream-json` stdout to drive animations of 16x16 pixel characters working in a 6-desk office.
@@ -11,7 +11,7 @@ Build an Electron desktop app that visualizes Claude Code's real-time state as a
 
 ## Project Structure
 ```
-claude-info/
+cloffice-pixel/
 ├── package.json
 ├── main.js                          # Electron main process + Claude CLI spawning
 ├── preload.js                       # IPC bridge (contextBridge)

@@ -1,8 +1,8 @@
-# Claude Info
+# ClOffice Pixel
 
 **Your AI coding session, visualized as a tiny pixel art office.**
 
-Claude Info is an Electron desktop app that turns Claude Code's real-time activity into an animated pixel art office scene. A small team of characters thinks at whiteboards, types at desks, and spawns new agents through a door -- all driven by what Claude Code is actually doing in your terminal. An RPG-style HUD tracks your token budgets so you always know how much capacity you have left.
+ClOffice Pixel is an Electron desktop app that turns Claude Code's real-time activity into an animated pixel art office scene. A small team of characters thinks at whiteboards, types at desks, and spawns new agents through a door -- all driven by what Claude Code is actually doing in your terminal. An RPG-style HUD tracks your token budgets so you always know how much capacity you have left.
 
 ---
 
@@ -70,7 +70,7 @@ The main process periodically scans all session log files modified within the pa
 
 ```bash
 git clone <repository-url>
-cd claude-info
+cd cloffice-pixel
 npm install
 npm start
 ```
@@ -89,7 +89,7 @@ The app uses **Listen Mode** by default. Simply run Claude Code in any terminal 
 claude
 ```
 
-Claude Info automatically finds the active session log file under `~/.claude/projects/` and begins visualizing events in real time. No manual connection step is needed.
+ClOffice Pixel automatically finds the active session log file under `~/.claude/projects/` and begins visualizing events in real time. No manual connection step is needed.
 
 ### Settings Screen
 
@@ -238,7 +238,7 @@ Overflow workers pace vertically on the right side (x: ~264px) between rows 4-12
 ## Project Structure
 
 ```
-claude-info/
+cloffice-pixel/
   main.js                              # Electron main process, session log watcher, IPC
   preload.js                           # Secure IPC bridge (contextBridge)
   package.json                         # Dependencies (Electron v33+)
