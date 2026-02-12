@@ -17,6 +17,7 @@ class SettingsScreen {
         padding: 20px; color: #fff1e8;
         font-family: monospace; font-size: 14px;
         min-width: 400px; image-rendering: auto;
+        max-height: 90vh; overflow-y: auto;
       ">
         <h2 style="margin: 0 0 15px; color: #ffec27; font-size: 16px;">CLAUDE INFO - SETTINGS</h2>
 
@@ -91,6 +92,8 @@ class SettingsScreen {
             <tr><td style="color: #29adff;">S</td><td>Cycle active sessions</td></tr>
             <tr><td style="color: #29adff;">E</td><td>Workers exit one by one</td></tr>
             <tr><td style="color: #29adff;">F</td><td>Toggle fire test (status incident)</td></tr>
+            <tr><td style="color: #29adff;">P</td><td>Toggle leader panic (stress test)</td></tr>
+            <tr><td style="color: #29adff;">I</td><td>Toggle snow storm (freeze test)</td></tr>
             <tr><td colspan="2" style="padding-top: 4px; color: #83769c;">--- Test States ---</td></tr>
             <tr><td style="color: #ffa300;">0</td><td>IDLE (lights out)</td></tr>
             <tr><td style="color: #ffa300;">1</td><td>THINKING (whiteboard)</td></tr>

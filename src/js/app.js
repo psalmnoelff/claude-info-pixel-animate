@@ -264,6 +264,34 @@
       }
     }
 
+    // P = toggle panic test
+    if (e.key === 'p' || e.key === 'P') {
+      demoMode = false;
+      if (stateMachine.leaderPanicking) {
+        stateMachine.activeWorkTimer = 0;
+        charMgr.leader.panicking = false;
+        hud.flashMessage('PANIC: OFF');
+      } else {
+        stateMachine.activeWorkTimer = CONFIG.PANIC_TIMEOUT;
+        hud.flashMessage('PANIC: ON');
+      }
+    }
+
+    // I = toggle snow storm / freeze test
+    if (e.key === 'i' || e.key === 'I') {
+      demoMode = false;
+      if (stateMachine.snowProgress > 0) {
+        stateMachine.globalInactivityTimer = 0;
+        stateMachine.snowProgress = 0;
+        charMgr.leader.freezeProgress = 0;
+        for (const w of charMgr.workers) w.freezeProgress = 0;
+        hud.flashMessage('SNOW: OFF');
+      } else {
+        stateMachine.globalInactivityTimer = CONFIG.SNOW_FULL_TIMEOUT;
+        hud.flashMessage('SNOW: ON');
+      }
+    }
+
     // S = cycle sessions
     if (e.key === 's' || e.key === 'S') {
       if (appState.availableSessions && appState.availableSessions.length > 1) {
